@@ -310,8 +310,11 @@ table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);ou
   .content{padding:20px 16px 96px}
   .cwrap{grid-template-columns:1fr}
   .ig-preview{position:static;order:-1;margin-bottom:20px}
+  .drag-hint{display:none}
+  .monthnav .mlabel{min-width:120px;font-size:17px}
   .cal-grid{gap:3px}
   .cal-cell{min-height:auto;padding:5px}
+  .cal-grid,.clist,.content>*{max-width:100%}
   .cal-day{font-size:12px}
   .slot .stitle{-webkit-line-clamp:1}
   .reel-modes{grid-template-columns:1fr}
@@ -464,16 +467,11 @@ function Shell(){
       el("div",{style:"font-size:11px;color:var(--muted);text-align:center;line-height:1.4"},
         "Cliente-obiettivo:",el("br"),el("b",{style:"color:var(--ink-2)"},"il proprietario che vende")))
   );
-  const mobNav=el("aside",{class:"side"},
-    el("nav",{class:"nav"},...navItems.map(([v,ic,lb,bd])=>
-      el("button",{class:S.view===v?"on":"",onclick:()=>nav(v)},
-        el("span",{class:"ic"},ic),el("span",{},lb),
-        bd?el("span",{class:"badge"},String(bd)):null))));
   const main=el("main",{class:"main"},
     el("div",{class:"topbar"},el("img",{src:LOGO}),el("span",{class:"tt"},"Redazione"),dryPill()),
     el("div",{class:"content"},views())
   );
-  app.append(side,main,mobNav);
+  app.append(side,main);
   return app;
 }
 function dryPill(){
@@ -497,7 +495,7 @@ function views(){
 function CalendarView(){
   const frag=el("div",{});
   const v=vacInfo();
-  if(v.active)frag.append(vacBanner(v));
+  if(v.on&&v.i&&v.f)frag.append(vacBanner(v));
   frag.append(el("div",{class:"phead"},
     el("div",{},el("h1",{},"Calendario"),
       el("div",{class:"sub"},"Il piano editoriale comanda: Lun Territorio · Mer Dati · Ven Vetrina · Sab Reel. Ogni contenuto costruisce memoria locale verso chi possiede casa qui.")),
@@ -515,10 +513,11 @@ function vacBanner(v){
   const pronti=slots.filter(c=>["pronto","ok_confermato","approvato"].includes(c.stato)).length;
   const scoperti=slots.filter(c=>["vuoto","bozza"].includes(c.stato)).length;
   const flagged=slots.filter(c=>String(c.richiedi_ok_esplicito).toLowerCase()==="true"&&["pronto","ok_confermato"].includes(c.stato)).length;
+  const titolo=v.active?"Modalità Vacanza attiva":"Modalità Vacanza programmata";
   return el("div",{class:"vac-banner"},el("span",{class:"vi"},"🏖️"),
     el("div",{},
-      el("div",{},el("b",{},"Modalità Vacanza attiva"),` dal ${fmtDate(v.i)} al ${fmtDate(v.f)}. `,
-        `${pronti} contenuti pronti escono da soli, ${scoperti} slot ancora scoperti.`),
+      el("div",{},el("b",{},titolo),` dal ${fmtDate(v.i)} al ${fmtDate(v.f)}. `,
+        `${pronti} contenuti pronti escono da soli, ${scoperti} slot ancora scoperti nel periodo.`),
       scoperti>0?el("div",{class:"warn",style:"margin-top:4px"},`⚠ Ci sono ${scoperti} giorni senza contenuto approvato nel periodo di chiusura.`):null,
       flagged>0?el("div",{class:"warn",style:"margin-top:4px"},`⚠ ${flagged} contenuti hanno "OK esplicito": in vacanza NON usciranno. Toglilo o non verranno pubblicati.`):null
     ));
@@ -550,7 +549,7 @@ function calMonth(){
         el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m-1,1);render();}},"‹"),
         el("span",{class:"mlabel"},MONTHS[m]+" "+y),
         el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m+1,1);render();}},"›")),
-      el("div",{style:"font-size:12px;color:var(--muted)"},"Trascina uno slot su un altro giorno per spostarlo")),
+      el("div",{class:"drag-hint",style:"font-size:12px;color:var(--muted)"},"Trascina uno slot su un altro giorno per spostarlo")),
     grid);
   return wrap;
 }
