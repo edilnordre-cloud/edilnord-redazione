@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Redazione Edilnord</title>
+<link rel="icon" href="https://edilnordre.it/wp-content/uploads/2025/02/cropped-favicon-logo-tondo-270x270.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sage:#9DC0AA; --sage-ink:#3f6b52; --sage-soft:#e7f0ea;
+  --bg:#f0efeb; --surface:#ffffff; --surface-2:#f7f6f2;
+  --ink:#1d1d1b; --ink-2:#4a4a46; --muted:#7a786f; --line:#e2e0d8; --line-2:#d3d0c6;
+  --danger:#e63946; --danger-soft:#fbe4e6;
+  --terr:#9DC0AA; --terr-ink:#3f6b52; --terr-soft:#e7f0ea;
+  --dati:#5b7b8a; --dati-ink:#3c5763; --dati-soft:#e5edf0;
+  --reale:#c8794a; --reale-ink:#8f4f28; --reale-soft:#f6e8dd;
+  --reel:#2f2e2c; --reel-ink:#2f2e2c; --reel-soft:#e6e4de;
+  --ok:#3f8f5f; --ok-soft:#e3f1e8; --warn:#b9821f; --warn-soft:#f6ecd5;
+  --radius:14px; --radius-sm:9px; --radius-lg:20px;
+  --shadow-1:0 1px 2px rgba(29,29,27,.04),0 1px 3px rgba(29,29,27,.06);
+  --shadow-2:0 4px 12px rgba(29,29,27,.07),0 12px 28px rgba(29,29,27,.06);
+  --shadow-3:0 18px 50px rgba(29,29,27,.16);
+  --e-out:cubic-bezier(.22,1,.36,1); --e-io:cubic-bezier(.65,0,.35,1);
+  --z-header:100; --z-drag:200; --z-sheet:300; --z-modal-bd:400; --z-modal:410; --z-toast:500;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  line-height:1.5;font-size:15px;-webkit-font-smoothing:antialiased;
+  min-height:100vh;overflow-x:hidden;
+}
+h1,h2,h3,h4{line-height:1.08;font-weight:700}
+.anton{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.01em;text-transform:uppercase}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--ink)}
+a{color:var(--sage-ink)}
+::placeholder{color:var(--muted);opacity:1}
+:focus-visible{outline:2.5px solid var(--sage-ink);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- App shell ---------- */
+.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.side{
+  position:sticky;top:0;height:100vh;background:var(--surface);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:20px 14px;gap:4px;z-index:var(--z-header)
+}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 18px}
+.brand img{width:38px;height:38px;border-radius:9px;flex:none}
+.brand .bt{font-family:'Anton',sans-serif;font-size:19px;letter-spacing:.02em;line-height:.95;text-transform:uppercase}
+.brand .bs{font-size:10.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.nav button{
+  display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--radius-sm);
+  color:var(--ink-2);font-weight:600;font-size:14px;text-align:left;transition:background .16s var(--e-out),color .16s
+}
+.nav button .ic{font-size:17px;width:20px;text-align:center;flex:none}
+.nav button:hover{background:var(--surface-2)}
+.nav button.on{background:var(--sage-soft);color:var(--sage-ink)}
+.nav button .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;padding:0 5px;border-radius:10px;display:grid;place-items:center}
+.side-foot{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.dry-pill{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;padding:8px 10px;border-radius:var(--radius-sm);letter-spacing:.02em}
+.dry-pill.on{background:var(--warn-soft);color:var(--warn)}
+.dry-pill.off{background:var(--danger-soft);color:var(--danger)}
+.dry-pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{display:none}
+.content{padding:28px 34px 80px;max-width:1320px;width:100%;margin:0 auto;flex:1}
+
+/* ---------- Vacation banner ---------- */
+.vac-banner{
+  background:linear-gradient(100deg,var(--reale-soft),#fbf1e8);border:1px solid #eed6c3;
+  border-radius:var(--radius);padding:14px 18px;margin-bottom:22px;display:flex;gap:14px;align-items:flex-start
+}
+.vac-banner .vi{font-size:22px;line-height:1}
+.vac-banner b{color:var(--reale-ink)}
+.vac-banner .warn{color:var(--danger);font-weight:600}
+
+/* ---------- Page head ---------- */
+.phead{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:24px;flex-wrap:wrap}
+.phead h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(30px,4.4vw,46px);letter-spacing:.005em;text-transform:uppercase;text-wrap:balance}
+.phead .sub{color:var(--muted);font-size:14px;margin-top:5px;max-width:60ch}
+.hrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:var(--radius-sm);font-weight:600;font-size:14px;transition:transform .12s var(--e-out),background .16s,box-shadow .16s,border-color .16s;white-space:nowrap;min-height:42px}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:var(--sage);color:#123322;box-shadow:var(--shadow-1)}
+.btn-p:hover{background:#8fb79c;box-shadow:var(--shadow-2)}
+.btn-d{background:var(--ink);color:#fff}
+.btn-d:hover{background:#333}
+.btn-g{background:var(--surface);color:var(--ink);border:1px solid var(--line-2)}
+.btn-g:hover{background:var(--surface-2);border-color:var(--muted)}
+.btn-danger{background:var(--danger-soft);color:var(--danger)}
+.btn-danger:hover{background:#f7d3d7}
+.btn-sm{padding:7px 12px;min-height:36px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn .sp{width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.iconbtn{width:40px;height:40px;border-radius:var(--radius-sm);display:grid;place-items:center;font-size:17px;color:var(--ink-2);border:1px solid transparent}
+.iconbtn:hover{background:var(--surface-2);border-color:var(--line)}
+
+/* ---------- Pillars & status ---------- */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11.5px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.p-territorio{background:var(--terr-soft);color:var(--terr-ink)}
+.p-dati{background:var(--dati-soft);color:var(--dati-ink)}
+.p-reale{background:var(--reale-soft);color:var(--reale-ink)}
+.p-reel{background:var(--reel-soft);color:var(--reel-ink)}
+.p-esterno{background:#eceae3;color:var(--muted)}
+.st{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.st .d{width:7px;height:7px;border-radius:50%;background:currentColor}
+.st-vuoto{background:#efeee9;color:var(--muted)}
+.st-bozza{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line-2)}
+.st-pronto{background:var(--dati-soft);color:var(--dati-ink)}
+.st-approvato,.st-ok_confermato{background:var(--warn-soft);color:var(--warn)}
+.st-pubblicato{background:var(--ok-soft);color:var(--ok)}
+.st-errore{background:var(--danger-soft);color:var(--danger);cursor:pointer}
+.st-bloccato,.st-saltato{background:#e7e5df;color:var(--ink-2)}
+.st-cestino{background:#eceae3;color:var(--muted)}
+
+/* ---------- Calendar ---------- */
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{padding:7px 15px;border-radius:7px;font-weight:600;font-size:13px;color:var(--ink-2);transition:.15s var(--e-out)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
+.monthnav{display:flex;align-items:center;gap:6px}
+.monthnav .mlabel{font-family:'Anton',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.01em;min-width:172px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.cal-dow{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;text-align:center;padding:2px 0 6px}
+.cal-cell{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);min-height:112px;padding:8px;display:flex;flex-direction:column;gap:5px;transition:border-color .15s,box-shadow .15s}
+.cal-cell.out{background:transparent;border-color:transparent}
+.cal-cell.today{border-color:var(--sage);box-shadow:0 0 0 1px var(--sage)}
+.cal-cell.drop{border-color:var(--sage-ink);border-style:dashed;background:var(--sage-soft)}
+.cal-day{font-family:'Anton',sans-serif;font-size:15px;color:var(--ink-2)}
+.cal-cell.today .cal-day{color:var(--sage-ink)}
+.slot{border:1px solid var(--line);border-radius:8px;padding:6px 7px;font-size:11.5px;line-height:1.25;cursor:pointer;background:var(--surface);transition:transform .12s var(--e-out),box-shadow .12s,border-color .12s;position:relative}
+.slot:hover{box-shadow:var(--shadow-1);border-color:var(--line-2);transform:translateY(-1px)}
+.slot .stitle{font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.slot .smeta{display:flex;align-items:center;gap:5px;margin-top:4px;color:var(--muted);font-size:10px;font-weight:600}
+.slot .sbar{position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:3px}
+.slot.pl-territorio .sbar{background:var(--terr)}
+.slot.pl-dati .sbar{background:var(--dati)}
+.slot.pl-reale .sbar{background:var(--reale)}
+.slot.pl-reel .sbar{background:var(--reel)}
+.slot.pl-esterno{border-style:dashed;opacity:.72}
+.slot{padding-left:13px}
+.slot[draggable=true]{cursor:grab}
+.slot.dragging{opacity:.4}
+
+/* list view */
+.clist{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.crow{display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:center;background:var(--surface);padding:13px 16px;cursor:pointer;transition:background .14s}
+.crow:hover{background:var(--surface-2)}
+.crow .cdate{font-family:'Anton',sans-serif;font-size:14px;color:var(--ink-2);line-height:1.1}
+.crow .cdate small{display:block;font-family:'Montserrat';font-size:11px;color:var(--muted);font-weight:600}
+.crow .ctitle{font-weight:600;min-width:0}
+.crow .ctitle small{display:block;color:var(--muted);font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .cactions{display:flex;gap:6px;align-items:center}
+
+/* ---------- Idee ---------- */
+.idea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.idea{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:11px;box-shadow:var(--shadow-1);transition:box-shadow .18s,transform .18s var(--e-out)}
+.idea:hover{box-shadow:var(--shadow-2);transform:translateY(-2px)}
+.idea h3{font-size:17px;line-height:1.25;text-wrap:balance}
+.idea .angle{color:var(--ink-2);font-size:13px}
+.idea .brief{font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.idea .ia{display:flex;gap:8px;margin-top:auto;padding-top:4px}
+.idea .ia .btn{flex:1}
+
+/* ---------- Composer ---------- */
+.composer{display:grid;grid-template-columns:1fr;gap:0}
+.stepper{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:7px;margin-bottom:22px;overflow-x:auto}
+.stepper button{flex:1;min-width:104px;display:flex;flex-direction:column;gap:3px;align-items:flex-start;padding:9px 12px;border-radius:var(--radius-sm);transition:.16s var(--e-out);position:relative}
+.stepper button .sn{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stepper button .sl{font-weight:700;font-size:13.5px;color:var(--ink-2)}
+.stepper button.on{background:var(--ink)}
+.stepper button.on .sn{color:var(--sage)}
+.stepper button.on .sl{color:#fff}
+.stepper button.done .sn::after{content:" ✓";color:var(--ok)}
+.stepper button:disabled{opacity:.45;cursor:not-allowed}
+.cwrap{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.9fr);gap:24px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-1)}
+.panel h2{font-size:20px;margin-bottom:4px}
+.panel .pd{color:var(--muted);font-size:13px;margin-bottom:18px}
+.field{margin-bottom:17px}
+.field label{display:block;font-weight:600;font-size:13px;margin-bottom:6px}
+.field .hint{color:var(--muted);font-weight:500;font-size:12px}
+.inp,.ta,.sel{width:100%;padding:11px 13px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-sm);transition:border-color .15s,background .15s}
+.inp:focus,.ta:focus,.sel:focus{background:var(--surface);border-color:var(--sage-ink);outline:none}
+.ta{resize:vertical;min-height:96px;line-height:1.55}
+.ta.big{min-height:220px}
+.qopts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.qopt{padding:8px 13px;border:1px solid var(--line-2);border-radius:100px;font-size:13px;font-weight:600;background:var(--surface);transition:.14s var(--e-out)}
+.qopt:hover{border-color:var(--sage)}
+.qopt.on{background:var(--sage);color:#123322;border-color:var(--sage)}
+.qcard{border:1px solid var(--line);border-radius:var(--radius-sm);padding:15px;margin-bottom:13px;background:var(--surface-2)}
+.qcard .qq{font-weight:600;margin-bottom:9px;font-size:14px}
+.qcard .qtag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:7px}
+.cbar{display:flex;gap:10px;justify-content:space-between;margin-top:24px;flex-wrap:wrap}
+.gate-warn{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);color:#7a5a12;border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;font-weight:500;margin-top:6px}
+
+/* media briefs & thumbs */
+.brief-box{background:var(--sage-soft);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:18px;font-size:13.5px;color:var(--sage-ink)}
+.brief-box b{display:block;margin-bottom:3px;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:12px}
+.thumb{position:relative;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--line-2);background:var(--surface-2)}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .rm{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:6px;background:rgba(29,29,27,.72);color:#fff;display:grid;place-items:center;font-size:13px}
+.thumb .rm:hover{background:var(--danger)}
+.drop-media{border:2px dashed var(--line-2);border-radius:var(--radius-sm);padding:26px;text-align:center;color:var(--muted);transition:.15s;cursor:pointer;font-size:13px}
+.drop-media:hover,.drop-media.over{border-color:var(--sage-ink);background:var(--sage-soft);color:var(--sage-ink)}
+.reel-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:18px}
+.rmode{border:1.5px solid var(--line-2);border-radius:var(--radius-sm);padding:14px;text-align:left;transition:.15s var(--e-out)}
+.rmode.on{border-color:var(--sage-ink);background:var(--sage-soft)}
+.rmode .rt{font-weight:700;font-size:13.5px;margin-bottom:3px}
+.rmode .rdz{font-size:11.5px;color:var(--muted)}
+.rmode.on .rdz{color:var(--sage-ink)}
+
+/* IG preview */
+.ig-preview{position:sticky;top:24px}
+.ig-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-2)}
+.ig-top{display:flex;align-items:center;gap:9px;padding:11px 13px}
+.ig-top img{width:32px;height:32px;border-radius:50%}
+.ig-top .ign{font-weight:700;font-size:13px}
+.ig-top .igl{font-size:11px;color:var(--muted)}
+.ig-media{aspect-ratio:1;background:var(--surface-2);position:relative;overflow:hidden;display:grid;place-items:center}
+.ig-media img,.ig-media video{width:100%;height:100%;object-fit:cover}
+.ig-media.reel{aspect-ratio:9/16;max-height:440px;background:#111}
+.ig-media .empty{color:var(--muted);font-size:12px;text-align:center;padding:20px}
+.ig-media .cnt{position:absolute;top:9px;right:9px;background:rgba(29,29,27,.66);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px}
+.ig-actions{display:flex;gap:15px;padding:10px 13px 4px;font-size:19px;color:var(--ink)}
+.ig-actions .r{margin-left:auto}
+.ig-cap{padding:2px 13px 15px;font-size:13px;line-height:1.5}
+.ig-cap .ign{font-weight:700;margin-right:6px}
+.ig-cap .more{color:var(--muted)}
+.blog-prev{padding:20px;font-size:13px;line-height:1.7;max-height:420px;overflow:auto}
+.blog-prev h1{font-family:'Anton';font-size:24px;margin-bottom:12px;text-transform:none}
+.blog-prev h2{font-size:17px;margin:16px 0 7px}
+.blog-prev p{margin-bottom:10px}
+
+/* ---------- Batch table ---------- */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table.batch{width:100%;border-collapse:collapse;min-width:820px;font-size:13px}
+table.batch th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:12px 12px;border-bottom:1px solid var(--line);font-weight:700;background:var(--surface-2)}
+table.batch td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.batch tr:last-child td{border-bottom:none}
+table.batch tr.nofoto{background:var(--warn-soft)}
+table.batch .tin{width:100%;border:1px solid transparent;background:transparent;padding:6px 7px;border-radius:6px;font-size:13px}
+table.batch .tin:hover{border-color:var(--line-2)}
+table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);outline:none}
+.bulkbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:var(--ink);border-radius:var(--radius);padding:11px 16px;margin-bottom:16px;color:#fff}
+.bulkbar .bc{font-weight:700;font-size:13px;margin-right:auto}
+
+/* ---------- Lista spesa ---------- */
+.spesa-place{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.spesa-place .sph{display:flex;align-items:center;gap:9px;padding:14px 17px;background:var(--surface-2);border-bottom:1px solid var(--line);font-weight:700}
+.spesa-place .sph .pin{font-size:17px}
+.spesa-item{display:flex;gap:12px;align-items:center;padding:12px 17px;border-bottom:1px solid var(--line)}
+.spesa-item:last-child{border-bottom:none}
+.spesa-item.done{opacity:.5}
+.spesa-item .chk{width:24px;height:24px;border:2px solid var(--line-2);border-radius:7px;flex:none;display:grid;place-items:center;cursor:pointer;transition:.14s}
+.spesa-item .chk.on{background:var(--sage);border-color:var(--sage);color:#123322}
+.spesa-item .si-txt{flex:1;min-width:0}
+.spesa-item .si-txt b{font-size:13.5px}
+.spesa-item .si-txt small{display:block;color:var(--muted);font-size:12px}
+
+/* ---------- Modal / sheet ---------- */
+.backdrop{position:fixed;inset:0;background:rgba(29,29,27,.42);backdrop-filter:blur(2px);z-index:var(--z-modal-bd);opacity:0;animation:fade .2s var(--e-out) forwards;display:grid;place-items:center;padding:20px}
+@keyframes fade{to{opacity:1}}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-3);max-width:480px;width:100%;padding:26px;z-index:var(--z-modal);animation:pop .24s var(--e-out)}
+@keyframes pop{from{transform:translateY(14px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.modal h2{font-size:20px;margin-bottom:8px}
+.modal p{color:var(--ink-2);font-size:14px;margin-bottom:18px}
+.modal .ma{display:flex;gap:10px;justify-content:flex-end}
+.gate .lock{font-size:30px;margin-bottom:10px}
+
+/* ---------- Toast ---------- */
+.toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:10px;z-index:var(--z-toast);max-width:min(94vw,380px)}
+.toast{background:var(--ink);color:#fff;padding:13px 16px;border-radius:var(--radius-sm);box-shadow:var(--shadow-3);font-size:13.5px;font-weight:500;display:flex;gap:10px;align-items:flex-start;animation:slidein .28s var(--e-out)}
+.toast.ok{background:var(--ok)}.toast.err{background:var(--danger)}.toast.warn{background:var(--warn)}
+.toast .tt{flex:1}
+@keyframes slidein{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- empty / spinner ---------- */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .ei{font-size:40px;margin-bottom:12px;opacity:.6}
+.empty-state h3{font-size:18px;color:var(--ink-2);margin-bottom:6px}
+.loading{display:flex;align-items:center;justify-content:center;gap:11px;padding:60px;color:var(--muted);font-weight:600}
+.loading .sp{width:22px;height:22px;border:3px solid var(--line-2);border-right-color:var(--sage-ink);border-radius:50%;animation:spin .7s linear infinite}
+.progress{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;background:var(--sage-ink);border-radius:6px;transition:width .3s var(--e-out)}
+
+/* ---------- Responsive ---------- */
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;border-right:none;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:var(--z-header);box-shadow:0 -4px 18px rgba(29,29,27,.07)}
+  .brand,.side-foot{display:none}
+  .nav{flex-direction:row;gap:0;justify-content:space-around;width:100%}
+  .nav button{flex-direction:column;gap:3px;padding:7px 4px;font-size:10px;font-weight:600;border-radius:9px;flex:1;text-align:center;align-items:center}
+  .nav button .ic{font-size:20px}
+  .nav button span:not(.ic):not(.badge){font-size:10px}
+  .nav button .badge{position:absolute;top:2px;right:calc(50% - 20px);margin:0}
+  .nav button{position:relative}
+  .topbar{display:flex;align-items:center;gap:12px;padding:13px 18px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+  .topbar img{width:30px;height:30px;border-radius:7px}
+  .topbar .tt{font-family:'Anton';font-size:16px;text-transform:uppercase;letter-spacing:.02em}
+  .topbar .dry-pill{margin-left:auto}
+  .content{padding:20px 16px 96px}
+  .cwrap{grid-template-columns:1fr}
+  .ig-preview{position:static;order:-1;margin-bottom:20px}
+  .cal-grid{gap:3px}
+  .cal-cell{min-height:auto;padding:5px}
+  .cal-day{font-size:12px}
+  .slot .stitle{-webkit-line-clamp:1}
+  .reel-modes{grid-template-columns:1fr}
+  .crow{grid-template-columns:70px 1fr;gap:10px}
+  .crow .cactions{grid-column:1/-1;justify-content:flex-start}
+  .phead h1{font-size:29px}
+}
+@media(max-width:560px){
+  .cal-grid .cal-dow:nth-child(n){font-size:9px}
+  .cal-cell .slot{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toasts" id="toasts"></div>
+<div id="modal-root"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   Redazione Edilnord — app statica (vanilla). Chiama i webhook n8n.
+   Chiave X-Redazione-Key tenuta SOLO in memoria (mai localStorage).
+   ============================================================ */
+const API = "https://n8n.edilnordre.it/webhook";
+const IG_USER = "edilnordre";
+const LOGO = "https://edilnordre.it/wp-content/uploads/2025/02/cropped-favicon-logo-tondo-270x270.webp";
+const PILLARS = {
+  territorio:{label:"Territorio",emoji:"🏘️",perc:"conosce il paese"},
+  dati:{label:"Dati",emoji:"📊",perc:"sa i numeri"},
+  reale:{label:"Vetrina",emoji:"🏠",perc:"vende davvero"},
+  reel:{label:"Reel",emoji:"🎬",perc:"raggiunge chi non ti segue"},
+  esterno:{label:"Esterno",emoji:"📌",perc:""}
+};
+const MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+
+const S = {
+  key:null, ready:false, view:"calendario", loading:true,
+  data:{calendario:[], idee:[], config:{}, immobili:[]},
+  calMode:"mese", calMonth:new Date(2026,6,1),
+  composer:null,           // stato composer attivo
+  batch:null,              // stato modalità batch
+  spesaChecked:{},
+  busy:false
+};
+
+/* ---------- utils ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const el=(t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==="class")e.className=a[k];else if(k==="html")e.innerHTML=a[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),a[k]);else if(a[k]!=null)e.setAttribute(k,a[k]);}for(const x of c.flat()){if(x==null||x===false)continue;e.append(x.nodeType?x:document.createTextNode(x));}return e;};
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const uid=p=>p+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,6);
+function toast(msg,type="",ms=3800){const t=el("div",{class:"toast "+type},el("span",{class:"tt"},msg));$("#toasts").append(t);setTimeout(()=>{t.style.transition="opacity .3s,transform .3s";t.style.opacity="0";t.style.transform="translateX(20px)";setTimeout(()=>t.remove(),320);},ms);}
+function fmtDate(ds){if(!ds)return "";const[y,m,d]=ds.split("-").map(Number);return d+" "+MONTHS[m-1].slice(0,3).toLowerCase();}
+function dowOf(ds){const[y,m,d]=ds.split("-").map(Number);return (new Date(Date.UTC(y,m-1,d)).getUTCDay()+6)%7;}
+function todayStr(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0");}
+
+/* ---------- API ---------- */
+async function api(path,body,{method="POST"}={}){
+  const opt={method,headers:{"X-Redazione-Key":S.key}};
+  if(body!==undefined){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(body);}
+  const r=await fetch(API+"/"+path,opt);
+  if(r.status===401)throw new Error("Chiave non valida (401).");
+  if(!r.ok)throw new Error("Errore rete ("+r.status+").");
+  const ct=r.headers.get("content-type")||"";
+  return ct.includes("json")?r.json():r.text();
+}
+async function uploadFoto(file){
+  const fd=new FormData();fd.append("data",file,file.name||"foto.jpg");
+  const r=await fetch(API+"/edilnord-upload-foto",{method:"POST",body:fd});
+  if(!r.ok)throw new Error("Upload fallito ("+r.status+").");
+  return r.json(); // {url,id}
+}
+
+/* ---------- data helpers ---------- */
+const cfg=(k,d)=>{const v=S.data.config[k];return v==null||v===""?d:v;};
+const isDry=()=>String(cfg("DRY_RUN","true")).toLowerCase()!=="false";
+function vacInfo(){
+  const on=String(cfg("VACANZA_ATTIVA","false")).toLowerCase()==="true";
+  const i=cfg("VACANZA_INIZIO",""),f=cfg("VACANZA_FINE","");
+  const today=todayStr();
+  const active=on&&i&&f&&today>=i&&today<=f;
+  return {on,i,f,active};
+}
+function slotById(id){return S.data.calendario.find(c=>c.id===id);}
+function visibleSlots(){return S.data.calendario.filter(c=>c.stato!=="cestino");}
+
+/* ============================================================ RENDER ROOT */
+function render(){
+  const root=$("#root");root.innerHTML="";
+  if(!S.ready){root.append(Gate());return;}
+  root.append(Shell());
+}
+function nav(v){S.view=v;S.composer=(v==="composer")?S.composer:null;render();window.scrollTo(0,0);}
+
+/* ---------- Gate (key entry) ---------- */
+function Gate(){
+  const wrap=el("div",{class:"backdrop"});
+  let val="";
+  const inp=el("input",{class:"inp",type:"password",placeholder:"Incolla la chiave…",style:"margin-bottom:14px",
+    oninput:e=>val=e.target.value.trim(),
+    onkeydown:e=>{if(e.key==="Enter")go();}});
+  const btn=el("button",{class:"btn btn-p",style:"width:100%",onclick:go},"Entra in Redazione");
+  async function go(){
+    if(!val){toast("Inserisci la chiave.","warn");return;}
+    S.key=val;btn.disabled=true;btn.textContent="Verifico…";
+    try{await loadAll();S.ready=true;render();toast("Benvenuto in Redazione.","ok");}
+    catch(e){S.key=null;btn.disabled=false;btn.textContent="Entra in Redazione";toast(e.message||"Accesso negato.","err");}
+  }
+  const m=el("div",{class:"modal gate"},
+    el("div",{class:"lock"},"🔐"),
+    el("h2",{class:"anton",style:"font-size:26px"},"Redazione Edilnord"),
+    el("p",{},"Centro editoriale di Edilnord RE. Inserisci la chiave di accesso: resta solo in questa sessione, non viene salvata."),
+    inp,btn
+  );
+  wrap.append(m);setTimeout(()=>inp.focus(),80);return wrap;
+}
+
+async function loadAll(){
+  S.loading=true;
+  const res=await api("redazione-carica-dati",{});
+  S.data.calendario=(res.calendario||[]).map(normSlot);
+  S.data.idee=res.idee||[];
+  S.data.config=res.config||{};
+  S.data.immobili=res.immobili||[];
+  S.loading=false;
+}
+function normSlot(r){r.stato=r.stato||"vuoto";return r;}
+
+/* ---------- Shell ---------- */
+function Shell(){
+  const app=el("div",{class:"app"});
+  const ideeNew=S.data.idee.filter(i=>i.stato==="nuova").length;
+  const navItems=[
+    ["calendario","🗓️","Calendario"],["idee","💡","Idee",ideeNew],
+    ["composer","✍️","Composer"],["batch","🗂️","Batch"],
+    ["spesa","🛒","Lista spesa"],["impostazioni","⚙️","Impostazioni"]
+  ];
+  const side=el("aside",{class:"side"},
+    el("div",{class:"brand"},el("img",{src:LOGO,alt:"Edilnord"}),
+      el("div",{},el("div",{class:"bt"},"Redazione"),el("div",{class:"bs"},"Edilnord RE"))),
+    el("nav",{class:"nav"},...navItems.map(([v,ic,lb,bd])=>
+      el("button",{class:S.view===v?"on":"",onclick:()=>nav(v)},
+        el("span",{class:"ic"},ic),el("span",{},lb),
+        bd?el("span",{class:"badge"},String(bd)):null))),
+    el("div",{class:"side-foot"},dryPill(),
+      el("div",{style:"font-size:11px;color:var(--muted);text-align:center;line-height:1.4"},
+        "Cliente-obiettivo:",el("br"),el("b",{style:"color:var(--ink-2)"},"il proprietario che vende")))
+  );
+  const mobNav=el("aside",{class:"side"},
+    el("nav",{class:"nav"},...navItems.map(([v,ic,lb,bd])=>
+      el("button",{class:S.view===v?"on":"",onclick:()=>nav(v)},
+        el("span",{class:"ic"},ic),el("span",{},lb),
+        bd?el("span",{class:"badge"},String(bd)):null))));
+  const main=el("main",{class:"main"},
+    el("div",{class:"topbar"},el("img",{src:LOGO}),el("span",{class:"tt"},"Redazione"),dryPill()),
+    el("div",{class:"content"},views())
+  );
+  app.append(side,main,mobNav);
+  return app;
+}
+function dryPill(){
+  const dry=isDry();
+  return el("div",{class:"dry-pill "+(dry?"on":"off")},el("span",{class:"dot"}),
+    dry?"DRY-RUN · simulazione":"LIVE · pubblica davvero");
+}
+function views(){
+  if(S.loading)return el("div",{class:"loading"},el("span",{class:"sp"}),"Carico la redazione…");
+  switch(S.view){
+    case"calendario":return CalendarView();
+    case"idee":return IdeeView();
+    case"composer":return ComposerView();
+    case"batch":return BatchView();
+    case"spesa":return SpesaView();
+    case"impostazioni":return SettingsView();
+  }
+}
+
+/* ============================================================ CALENDARIO */
+function CalendarView(){
+  const frag=el("div",{});
+  const v=vacInfo();
+  if(v.active)frag.append(vacBanner(v));
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},"Calendario"),
+      el("div",{class:"sub"},"Il piano editoriale comanda: Lun Territorio · Mer Dati · Ven Vetrina · Sab Reel. Ogni contenuto costruisce memoria locale verso chi possiede casa qui.")),
+    el("div",{class:"hrow"},
+      el("div",{class:"seg"},
+        el("button",{class:S.calMode==="mese"?"on":"",onclick:()=>{S.calMode="mese";render();}},"Mese"),
+        el("button",{class:S.calMode==="lista"?"on":"",onclick:()=>{S.calMode="lista";render();}},"Lista")),
+      el("button",{class:"btn btn-p",onclick:()=>startComposer()},"＋ Nuovo contenuto"))
+  ));
+  frag.append(S.calMode==="mese"?calMonth():calList());
+  return frag;
+}
+function vacBanner(v){
+  const slots=visibleSlots().filter(c=>c.data>=v.i&&c.data<=v.f&&c.tipo!=="esterno");
+  const pronti=slots.filter(c=>["pronto","ok_confermato","approvato"].includes(c.stato)).length;
+  const scoperti=slots.filter(c=>["vuoto","bozza"].includes(c.stato)).length;
+  const flagged=slots.filter(c=>String(c.richiedi_ok_esplicito).toLowerCase()==="true"&&["pronto","ok_confermato"].includes(c.stato)).length;
+  return el("div",{class:"vac-banner"},el("span",{class:"vi"},"🏖️"),
+    el("div",{},
+      el("div",{},el("b",{},"Modalità Vacanza attiva"),` dal ${fmtDate(v.i)} al ${fmtDate(v.f)}. `,
+        `${pronti} contenuti pronti escono da soli, ${scoperti} slot ancora scoperti.`),
+      scoperti>0?el("div",{class:"warn",style:"margin-top:4px"},`⚠ Ci sono ${scoperti} giorni senza contenuto approvato nel periodo di chiusura.`):null,
+      flagged>0?el("div",{class:"warn",style:"margin-top:4px"},`⚠ ${flagged} contenuti hanno "OK esplicito": in vacanza NON usciranno. Toglilo o non verranno pubblicati.`):null
+    ));
+}
+function calMonth(){
+  const y=S.calMonth.getFullYear(),m=S.calMonth.getMonth();
+  const first=new Date(y,m,1);const startDow=(first.getDay()+6)%7;
+  const days=new Date(y,m+1,0).getDate();
+  const grid=el("div",{class:"cal-grid"});
+  DOW.forEach(d=>grid.append(el("div",{class:"cal-dow"},d)));
+  const byDate={};visibleSlots().forEach(s=>{(byDate[s.data]=byDate[s.data]||[]).push(s);});
+  for(let i=0;i<startDow;i++)grid.append(el("div",{class:"cal-cell out"}));
+  const today=todayStr();
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const cell=el("div",{class:"cal-cell"+(ds===today?" today":"")});
+    cell.dataset.date=ds;
+    cell.append(el("div",{class:"cal-day"},String(d)));
+    (byDate[ds]||[]).sort((a,b)=>(a.ora||"").localeCompare(b.ora||"")).forEach(s=>cell.append(slotChip(s)));
+    // drop target (desktop)
+    cell.addEventListener("dragover",e=>{if(S._drag){e.preventDefault();cell.classList.add("drop");}});
+    cell.addEventListener("dragleave",()=>cell.classList.remove("drop"));
+    cell.addEventListener("drop",e=>{e.preventDefault();cell.classList.remove("drop");if(S._drag)moveSlot(S._drag,ds);});
+    grid.append(cell);
+  }
+  const wrap=el("div",{},
+    el("div",{class:"hrow",style:"justify-content:space-between;margin-bottom:16px"},
+      el("div",{class:"monthnav"},
+        el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m-1,1);render();}},"‹"),
+        el("span",{class:"mlabel"},MONTHS[m]+" "+y),
+        el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m+1,1);render();}},"›")),
+      el("div",{style:"font-size:12px;color:var(--muted)"},"Trascina uno slot su un altro giorno per spostarlo")),
+    grid);
+  return wrap;
+}
+function slotChip(s){
+  const p=PILLARS[s.pilastro]||PILLARS.esterno;
+  const c=el("div",{class:`slot pl-${s.pilastro} st-wrap`,title:(s.titolo||p.label)});
+  if(s.tipo!=="esterno"&&s.stato!=="pubblicato"){
+    c.draggable=true;
+    c.addEventListener("dragstart",()=>{S._drag=s.id;c.classList.add("dragging");});
+    c.addEventListener("dragend",()=>{S._drag=null;c.classList.remove("dragging");});
+  }
+  c.addEventListener("click",()=>openSlot(s));
+  c.append(el("div",{class:"sbar"}));
+  c.append(el("div",{class:"stitle"},s.titolo||(s.tipo==="esterno"?"Martedì Immobiliare":p.emoji+" "+p.label)));
+  c.append(el("div",{class:"smeta"},s.ora||"—",statoMini(s.stato)));
+  return c;
+}
+function statoMini(st){const map={vuoto:"○",bozza:"◔",pronto:"◑",approvato:"◕",ok_confermato:"◕",pubblicato:"●",errore:"⚠",bloccato:"⊘",saltato:"–",esterno:"↗"};return el("span",{style:st==="errore"?"color:var(--danger)":st==="pubblicato"?"color:var(--ok)":""},map[st]||"○");}
+function calList(){
+  const list=el("div",{class:"clist"});
+  const items=visibleSlots().filter(s=>s.data>=todayStr()||["bozza","pronto","errore"].includes(s.stato))
+    .sort((a,b)=>(a.data+a.ora).localeCompare(b.data+b.ora));
+  if(!items.length)return emptyState("🗓️","Nessuno slot in vista","Gli slot futuri appariranno qui.");
+  items.forEach(s=>{
+    const p=PILLARS[s.pilastro]||PILLARS.esterno;
+    list.append(el("div",{class:"crow",onclick:()=>openSlot(s)},
+      el("div",{class:"cdate"},fmtDate(s.data),el("small",{},s.ora||"")),
+      el("div",{class:"ctitle"},s.titolo||el("span",{style:"color:var(--muted)"},p.emoji+" "+p.label+" — slot vuoto"),
+        el("small",{},(s.caption_ig||"").slice(0,90))),
+      el("div",{class:"cactions"},el("span",{class:"chip p-"+s.pilastro},p.emoji+" "+p.label),statoBadge(s))
+    ));
+  });
+  return list;
+}
+function statoBadge(s){
+  const b=el("span",{class:"st st-"+s.stato},el("span",{class:"d"}),s.stato);
+  if(s.stato==="errore")b.addEventListener("click",e=>{e.stopPropagation();modalInfo("Dettaglio errore",s.note||"Nessun dettaglio disponibile. Controlla i log n8n.");});
+  return b;
+}
+
+function openSlot(s){
+  if(s.tipo==="esterno"){modalInfo("Gestito esternamente","Il Martedì Immobiliare è pubblicato da un altro workflow. Questo slot è solo informativo e non si modifica da qui.");return;}
+  startComposer(s);
+}
+async function moveSlot(id,newDate){
+  const s=slotById(id);if(!s||s.data===newDate)return;
+  const old=s.data;s.data=newDate;s.aggiornato_il=new Date().toISOString();render();
+  try{await api("redazione-salva-contenuto",{contenuto:s});toast("Spostato al "+fmtDate(newDate)+".","ok");}
+  catch(e){s.data=old;render();toast("Spostamento non salvato: "+e.message,"err");}
+}
+
+/* ============================================================ IDEE */
+function IdeeView(){
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},"Idee"),el("div",{class:"sub"},"L'agente-giornalista propone spunti locali dal territorio. Ogni idea rafforza una percezione: conosce il paese, sa i numeri, vende davvero.")),
+    el("div",{class:"hrow"},
+      el("button",{class:"btn btn-g",onclick:openGeneraIdee},"⚡ Genera idee ora"))
+  ));
+  const nuove=S.data.idee.filter(i=>i.stato==="nuova");
+  if(!nuove.length)return frag.append(emptyState("💡","Nessuna idea in attesa","Usa \"Genera idee ora\" per riempire in blocco, oppure aspetta la proposta del lunedì mattina.")),frag;
+  const grid=el("div",{class:"idea-grid"});
+  nuove.forEach(i=>{
+    const p=PILLARS[i.pilastro]||PILLARS.territorio;
+    grid.append(el("div",{class:"idea"},
+      el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+        i.formato?el("span",{class:"chip p-esterno"},i.formato):null),
+      el("h3",{},i.titolo),
+      i.angolo_locale?el("div",{class:"angle"},"📍 "+i.angolo_locale):null,
+      i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
+      el("div",{class:"ia"},
+        el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"✓ Sviluppa"),
+        el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
+    ));
+  });
+  frag.append(grid);return frag;
+}
+async function accettaIdea(i){
+  const tipo=i.formato==="articolo+post"?"articolo_blog":(i.pilastro==="reel"?"reel":"post_ig");
+  const slot=findFreeSlot(i.pilastro,tipo);
+  i.stato="accettata";
+  try{await api("redazione-salva-idea",{idea:i});}catch(e){}
+  startComposer(slot,{idea:i});
+  toast(slot?("Bozza creata nello slot del "+fmtDate(slot.data)):"Idea aperta nel Composer.","ok");
+}
+function scartaIdea(i){
+  modalConfirm("Scartare questa idea?",i.titolo,"Scarta",async()=>{
+    const prev=i.stato;i.stato="scartata";render();
+    try{await api("redazione-salva-idea",{idea:i});toastUndo("Idea scartata.",async()=>{i.stato=prev;await api("redazione-salva-idea",{idea:i});render();});}
+    catch(e){i.stato=prev;render();toast("Errore: "+e.message,"err");}
+  },"danger");
+}
+function findFreeSlot(pilastro,tipo){
+  const today=todayStr();
+  const cands=visibleSlots().filter(s=>s.stato==="vuoto"&&s.data>=today&&(s.pilastro===pilastro||(tipo==="reel"&&s.pilastro==="reel")))
+    .sort((a,b)=>(a.data).localeCompare(b.data));
+  return cands[0]||null;
+}
+function openGeneraIdee(){
+  let n=8,pil="";
+  const inpN=el("input",{class:"inp",type:"number",min:"1",max:"20",value:"8",oninput:e=>n=+e.target.value});
+  const selP=el("select",{class:"sel",onchange:e=>pil=e.target.value},
+    el("option",{value:""},"Tutti i pilastri"),
+    ...["territorio","dati","reale","reel"].map(p=>el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label)));
+  modalCustom("Genera idee ora","Riempi in blocco i periodi di chiusura. L'agente lavora in background: le idee compaiono qui man mano.",
+    [el("div",{class:"field"},el("label",{},"Quante idee (max 20)"),inpN),
+     el("div",{class:"field"},el("label",{},"Pilastro"),selP)],
+    "Genera",async(close)=>{
+      close();
+      const prog=progressToast("Genero "+n+" idee dal territorio…");
+      try{await api("redazione-genera-idee",{n,pilastro:pil});
+        prog.done();pollIdee(6);
+      }catch(e){prog.remove();toast("Errore: "+e.message,"err");}
+    });
+}
+async function pollIdee(times){
+  // l'agente è asincrono: ricarico qualche volta
+  const before=S.data.idee.filter(i=>i.stato==="nuova").length;
+  let n=0;const iv=setInterval(async()=>{
+    n++;try{const res=await api("redazione-carica-dati",{});S.data.idee=res.idee||[];}catch(e){}
+    const now=S.data.idee.filter(i=>i.stato==="nuova").length;
+    if(now>before){clearInterval(iv);if(S.view==="idee")render();toast((now-before)+" nuove idee pronte.","ok");}
+    else if(n>=times){clearInterval(iv);if(S.view==="idee")render();toast("Idee in arrivo: ricarica tra poco se non le vedi.","warn");}
+  },7000);
+}
+
+/* ============================================================ COMPOSER */
+const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
+function startComposer(slot,extra={}){
+  const idea=extra.idea;
+  S.composer={
+    id:slot?slot.id:uid("ig"),
+    isNew:!slot,
+    data:slot?slot.data:"",ora:slot?slot.ora:"",
+    pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
+    tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.formato==="articolo+post"?"articolo_blog":"post_ig"):"post_ig"),
+    tema:idea?idea.titolo:(slot&&slot.titolo?slot.titolo:""),
+    titolo:slot?slot.titolo||"":"",
+    caption_ig:slot?slot.caption_ig||"":"",
+    testo_blog:slot?slot.testo_blog||"":"",
+    brief_foto:idea?idea.brief_foto:(slot?slot.note:"")||"",
+    foto:(slot&&slot.url_foto?slot.url_foto.split(",").filter(Boolean):[]),
+    url_video:slot?slot.url_video||"":"",
+    overlay:[],
+    reelMode:"foto",
+    geotag:slot?slot.geotag||"Brugherio":"Brugherio",
+    richiedi_ok:slot?String(slot.richiedi_ok_esplicito).toLowerCase()==="true":false,
+    id_intervista:slot?slot.id_intervista||"":"",
+    intervista:null,       // {domande:[],risposte:[]}
+    step:"idea",
+    dirty:false, generating:false, uploading:false, cta_applicata:false
+  };
+  S.view="composer";render();
+}
+function ComposerView(){
+  const c=S.composer;
+  if(!c)return emptyState("✍️","Nessun contenuto aperto","Scegli uno slot dal calendario o parti da un'idea.");
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},c.isNew?"Nuovo contenuto":"Modifica contenuto"),
+      el("div",{class:"sub"},"Intervista, non generazione cieca: partiamo dalla tua opinione. Lettore immaginato: un proprietario di Brugherio che potrebbe vendere.")),
+    el("div",{class:"hrow"},
+      el("button",{class:"btn btn-g btn-sm",onclick:saveDraft},c.dirty?"● Salva bozza":"Salvato"),
+      el("button",{class:"btn btn-g btn-sm",onclick:()=>nav("calendario")},"Chiudi"))
+  ));
+  // stepper
+  const canGo=stepGuards();
+  const stepper=el("div",{class:"stepper"});
+  STEPS.forEach(([k,l],idx)=>{
+    const done=canGo.done.includes(k);
+    stepper.append(el("button",{class:(c.step===k?"on ":"")+(done?"done":""),
+      disabled:!canGo.reach.includes(k)&&c.step!==k,
+      onclick:()=>{c.step=k;render();}},
+      el("span",{class:"sn"},"Step "+(idx+1)),el("span",{class:"sl"},l)));
+  });
+  frag.append(stepper);
+  frag.append(el("div",{class:"cwrap"},stepPanel(),previewPanel()));
+  // keyboard shortcuts
+  document.onkeydown=e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==="s"){e.preventDefault();saveDraft();}
+    if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();gotoNextStep();}
+  };
+  return frag;
+}
+function stepGuards(){
+  const c=S.composer;
+  const hasIntervista=c.intervista&&c.intervista.risposte&&c.intervista.risposte.some(r=>String(r||"").trim());
+  const hasFoto=c.tipo==="reel"?(c.url_video||c.foto.length>=3):c.foto.length>0;
+  const hasTesto=!!(c.caption_ig&&(c.tipo!=="articolo_blog"||c.testo_blog));
+  const done=[];if(c.tema)done.push("idea");if(hasIntervista)done.push("intervista");if(hasTesto)done.push("testo");if(hasFoto)done.push("foto");
+  const reach=["idea"];if(c.tema)reach.push("intervista");if(hasIntervista)reach.push("testo");if(hasTesto)reach.push("foto","anteprima","programma");
+  return {done,reach,hasIntervista,hasFoto,hasTesto};
+}
+function gotoNextStep(){const i=STEPS.findIndex(s=>s[0]===S.composer.step);if(i<STEPS.length-1){const g=stepGuards();const next=STEPS[i+1][0];if(g.reach.includes(next)){S.composer.step=next;render();}else toast("Completa prima questo step.","warn");}}
+
+function stepPanel(){
+  const c=S.composer;const g=stepGuards();
+  const panel=el("div",{class:"panel"});
+  if(c.step==="idea"){
+    panel.append(el("h2",{},"Di cosa parliamo"),el("p",{class:"pd"},"Un tema locale e concreto. Niente macroeconomia o mercato nazionale."));
+    panel.append(field("Tema / argomento",textarea(c.tema,v=>{c.tema=v;c.dirty=true;},"Es. Quanto vale un trilocale in Via Increa e perché la zona sta cambiando")));
+    panel.append(el("div",{class:"hrow"},
+      pilPicker(),tipoPicker()));
+    panel.append(el("div",{class:"cbar"},el("span",{}),
+      el("button",{class:"btn btn-p",disabled:!c.tema.trim(),onclick:()=>{c.step="intervista";render();}},"Prepara l'intervista →")));
+  }
+  else if(c.step==="intervista"){
+    panel.append(el("h2",{},"Intervista a Matteo"),el("p",{class:"pd"},"Le tue risposte sono la tesi del contenuto. Rispondi anche solo a voce sintetica: l'AI scrive partendo da qui."));
+    if(!c.intervista){
+      panel.append(el("button",{class:"btn btn-p",disabled:c.generating,onclick:genIntervista},
+        c.generating?el("span",{class:"sp"}):null,c.generating?"Preparo le domande…":"🎤 Genera le domande"));
+    }else{
+      c.intervista.domande.forEach((d,qi)=>{
+        const card=el("div",{class:"qcard"},el("div",{class:"qtag"},d.tipo==="rapida"?"Risposta rapida":"Risposta aperta"),el("div",{class:"qq"},d.testo));
+        if(d.tipo==="rapida"&&d.opzioni){
+          const opts=el("div",{class:"qopts"});
+          d.opzioni.forEach(o=>opts.append(el("button",{class:"qopt"+(c.intervista.risposte[qi]===o?" on":""),onclick:()=>{c.intervista.risposte[qi]=o;c.dirty=true;render();}},o)));
+          card.append(opts);
+          card.append(textarea(c.intervista.risposte[qi]&&!d.opzioni.includes(c.intervista.risposte[qi])?c.intervista.risposte[qi]:"",v=>{c.intervista.risposte[qi]=v;c.dirty=true;},"…oppure aggiungi con parole tue"));
+        }else{
+          card.append(textarea(c.intervista.risposte[qi]||"",v=>{c.intervista.risposte[qi]=v;c.dirty=true;},"La tua risposta — un caso reale, un numero visto sul campo…"));
+        }
+        panel.append(card);
+      });
+      panel.append(el("button",{class:"btn btn-g btn-sm",onclick:genIntervista},"↻ Altre domande"));
+      panel.append(el("div",{class:"cbar"},
+        el("button",{class:"btn btn-g",onclick:()=>{c.step="idea";render();}},"← Indietro"),
+        el("button",{class:"btn btn-p",disabled:!g.hasIntervista,onclick:saveIntervistaNext},"Scrivi il contenuto →")));
+      if(!g.hasIntervista)panel.append(el("div",{class:"gate-warn"},"✍️","Rispondi ad almeno una domanda: senza intervista il contenuto non si genera."));
+    }
+  }
+  else if(c.step==="testo"){
+    panel.append(el("h2",{},"Testo & caption"),el("p",{class:"pd"},"Generato dalle tue risposte. Modifica liberamente inline."));
+    if(!c.caption_ig&&!c.generating){
+      panel.append(el("button",{class:"btn btn-p",onclick:()=>genTesto()},"✨ Genera dal l'intervista"));
+    }else if(c.generating){
+      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
+    }else{
+      panel.append(field("Titolo",input(c.titolo,v=>{c.titolo=v;c.dirty=true;updatePreview();})));
+      if(c.tipo==="articolo_blog")
+        panel.append(field("Articolo blog (HTML)",textarea(c.testo_blog,v=>{c.testo_blog=v;c.dirty=true;updatePreview();},"",true)));
+      panel.append(field("Caption Instagram",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();},"",false),
+        "La prima riga deve avere un numero, un luogo o una domanda. Hashtag già in coda."));
+      if(c.cta_applicata)panel.append(el("div",{class:"brief-box"},el("b",{},"CTA valutatore inserita"),"Questo è 1 contenuto su 3: chiude con l'invito soft al valutatore."));
+      const regen=el("div",{class:"field"},el("label",{},"Rigenera con un'indicazione"),
+        el("div",{class:"hrow"},
+          (()=>{const i=input("",v=>c._ind=v,"Es. più corto, più tecnico, meno formale");i.style.flex="1";return i;})(),
+          el("button",{class:"btn btn-g",onclick:()=>genTesto(c._ind)},"↻ Rigenera")));
+      panel.append(regen);
+      panel.append(el("div",{class:"cbar"},
+        el("button",{class:"btn btn-g",onclick:()=>{c.step="intervista";render();}},"← Indietro"),
+        el("button",{class:"btn btn-p",onclick:()=>{c.step="foto";render();}},"Aggiungi i media →")));
+    }
+  }
+  else if(c.step==="foto"){
+    panel.append(el("h2",{},"Media reali"),el("p",{class:"pd"},"Vincolo: niente stato \"pronto\" senza almeno una foto reale. Le foto costruiscono la riconoscibilità Edilnord."));
+    if(c.brief_foto)panel.append(el("div",{class:"brief-box"},el("b",{},"Brief dall'AI"),c.brief_foto));
+    if(c.tipo==="reel")panel.append(reelModes());
+    if(c.tipo!=="reel"||c.reelMode==="foto")panel.append(mediaUploader("image"));
+    if(c.tipo==="reel"&&c.reelMode==="clip")panel.append(mediaUploader("video-clips"));
+    if(c.tipo==="reel"&&c.reelMode==="mp4")panel.append(mediaUploader("mp4"));
+    if(c.tipo==="reel"&&(c.reelMode==="foto"||c.reelMode==="clip"))panel.append(overlayEditor());
+    panel.append(el("div",{class:"cbar"},
+      el("button",{class:"btn btn-g",onclick:()=>{c.step="testo";render();}},"← Indietro"),
+      el("button",{class:"btn btn-p",disabled:!g.hasFoto,onclick:()=>{c.step="anteprima";render();}},"Vedi l'anteprima →")));
+    if(!g.hasFoto)panel.append(el("div",{class:"gate-warn"},"📷",c.tipo==="reel"?"Servono un mp4 pronto oppure ≥3 foto/clip per montare il Reel.":"Carica almeno 1 foto reale per procedere."));
+  }
+  else if(c.step==="anteprima"){
+    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Così apparirà. Puoi ancora correggere testo e caption qui sotto."));
+    panel.append(field("Titolo",input(c.titolo,v=>{c.titolo=v;c.dirty=true;updatePreview();})));
+    panel.append(field("Caption",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();})));
+    panel.append(el("div",{class:"cbar"},
+      el("button",{class:"btn btn-g",onclick:()=>{c.step="foto";render();}},"← Indietro"),
+      el("button",{class:"btn btn-p",onclick:()=>{c.step="programma";render();}},"Programma →")));
+  }
+  else if(c.step==="programma"){
+    panel.append(el("h2",{},"Quando esce"),el("p",{class:"pd"},"Orari fissi di default: la regolarità vale più dell'ottimizzazione."));
+    panel.append(field("Data",input(c.data,v=>{c.data=v;c.dirty=true;},"","date")));
+    panel.append(field("Ora",(()=>{const s=input(c.ora||defaultOra(),v=>{c.ora=v;c.dirty=true;},"","time");return s;})()));
+    panel.append(suggerimentoOrario());
+    panel.append(field("Geotag",(()=>{const i=input(c.geotag,v=>{c.geotag=v;c.dirty=true;},"Brugherio");return i;})(),"Default Brugherio. Cambialo per Concorezzo, Vimercate, ecc."));
+    // richiedi OK
+    const okToggle=el("label",{class:"hrow",style:"cursor:pointer;font-weight:600;font-size:14px;gap:9px"},
+      (()=>{const cb=el("input",{type:"checkbox"});cb.checked=c.richiedi_ok;cb.onchange=e=>{c.richiedi_ok=e.target.checked;c.dirty=true;checkVacFlag();};return cb;})(),
+      "Richiedi OK esplicito su Telegram (contenuto delicato)");
+    panel.append(el("div",{class:"field"},okToggle,el("div",{class:"hint",style:"margin-top:5px"},"Di default il contenuto esce da solo (opt-out). Attiva questo solo per prezzi, casi reali o contenuti polemici.")));
+    const g2=stepGuards();
+    const canReady=g2.hasIntervista&&g2.hasFoto&&c.data&&(c.ora||defaultOra());
+    panel.append(el("div",{class:"cbar"},
+      el("button",{class:"btn btn-g",onclick:saveDraft},"Salva come bozza"),
+      el("button",{class:"btn btn-p",disabled:!canReady,onclick:setPronto},"✓ Segna come pronto")));
+    if(!canReady)panel.append(el("div",{class:"gate-warn"},"⚠️","Per \"pronto\" servono intervista compilata, almeno una foto reale e data+ora."));
+  }
+  return panel;
+}
+function defaultOra(){const c=S.composer;if(c.tipo==="articolo_blog")return "08:00";if(c.pilastro==="reel"||c.tipo==="reel")return "11:00";return "19:00";}
+function checkVacFlag(){const c=S.composer;const v=vacInfo();if(c.richiedi_ok&&v.on&&c.data&&c.data>=v.i&&c.data<=v.f)toast("Attenzione: in Modalità Vacanza i contenuti con OK esplicito NON escono. Verrà tenuto in attesa.","warn",6000);}
+
+function pilPicker(){const c=S.composer;return el("div",{class:"field",style:"flex:1"},el("label",{},"Pilastro"),
+  el("select",{class:"sel",onchange:e=>{c.pilastro=e.target.value;c.dirty=true;render();}},
+    ...["territorio","dati","reale","reel"].map(p=>{const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label+" — "+PILLARS[p].perc);if(c.pilastro===p)o.selected=true;return o;})));}
+function tipoPicker(){const c=S.composer;return el("div",{class:"field",style:"flex:1"},el("label",{},"Tipo"),
+  el("select",{class:"sel",onchange:e=>{c.tipo=e.target.value;c.dirty=true;render();}},
+    ...[["post_ig","Post Instagram"],["articolo_blog","Articolo blog + post"],["reel","Reel"],["entrambi","Blog + IG"]].map(([v,l])=>{const o=el("option",{value:v},l);if(c.tipo===v)o.selected=true;return o;})));}
+
+function reelModes(){const c=S.composer;
+  const modes=[["foto","5-8 foto","Il server monta lo slideshow"],["clip","4-6 clip video","Concatenate con overlay (meglio: c'è movimento)"],["mp4","MP4 pronto","Montato in Canva Pro, va dritto in coda"]];
+  return el("div",{},el("label",{style:"font-weight:600;font-size:13px;margin-bottom:8px;display:block"},"Come crei il Reel"),
+    el("div",{class:"reel-modes"},...modes.map(([k,t,d])=>el("button",{class:"rmode"+(c.reelMode===k?" on":""),onclick:()=>{c.reelMode=k;render();}},
+      el("div",{class:"rt"},t),el("div",{class:"rdz"},d)))));
+}
+function overlayEditor(){const c=S.composer;
+  if(!c.overlay.length&&c.caption_ig){c.overlay=[c.titolo||"",""].filter(Boolean);}
+  const box=el("div",{class:"field"},el("label",{},"Testo overlay (la prima riga è l'hook)"),
+    ...([0,1,2,3,4].map(i=>{const v=c.overlay[i]||"";return input(v,val=>{c.overlay[i]=val;c.dirty=true;},"Riga "+(i+1)+(i===0?" — hook con numero/luogo/domanda":""));})));
+  return box;
+}
+function mediaUploader(kind){
+  const c=S.composer;
+  const accept=kind==="image"?"image/*":"video/*";
+  const multi=kind!=="mp4";
+  const drop=el("label",{class:"drop-media"},
+    kind==="mp4"?"Trascina qui l'MP4 (9:16, max 90s) o clicca":
+    kind==="video-clips"?"Trascina qui le clip (4-6, ~5s l'una) o clicca":
+    "Trascina qui le foto o clicca — puoi selezionarne più insieme");
+  const inp=el("input",{type:"file",accept,style:"display:none"});
+  if(multi)inp.multiple=true;
+  drop.append(inp);
+  drop.onclick=()=>inp.click();
+  inp.onchange=e=>handleFiles([...e.target.files],kind);
+  drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});
+  drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+  drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");handleFiles([...e.dataTransfer.files],kind);});
+  const wrap=el("div",{class:"field"},drop);
+  // thumbs
+  if(kind==="mp4"&&c.url_video){wrap.append(el("div",{class:"thumbs"},el("div",{class:"thumb"},el("video",{src:c.url_video,muted:true,playsinline:true}),el("button",{class:"rm",onclick:()=>{c.url_video="";c.dirty=true;render();}},"✕"))));}
+  else if(c.foto.length){
+    const t=el("div",{class:"thumbs"});
+    c.foto.forEach((u,i)=>t.append(el("div",{class:"thumb"},el("img",{src:u}),
+      el("button",{class:"rm",onclick:()=>{c.foto.splice(i,1);c.dirty=true;updatePreview();render();}},"✕"))));
+    wrap.append(t);
+  }
+  if(c.uploading)wrap.append(el("div",{style:"font-size:12px;color:var(--muted);margin-top:8px"},el("span",{class:"sp",style:"display:inline-block;width:12px;height:12px;border-width:2px;vertical-align:middle;margin-right:6px"}),"Carico su Cloudinary…"));
+  return wrap;
+}
+async function handleFiles(files,kind){
+  const c=S.composer;if(!files.length)return;
+  c.uploading=true;render();
+  try{
+    for(const f of files){
+      const res=await uploadFoto(f);
+      if(kind==="mp4"){c.url_video=res.url;break;}
+      else c.foto.push(res.url);
+    }
+    c.dirty=true;toast("Media caricato.","ok");
+  }catch(e){toast("Upload fallito: "+e.message,"err");}
+  c.uploading=false;updatePreview();render();
+}
+
+function field(label,control,hint){return el("div",{class:"field"},el("label",{},label),control,hint?el("div",{class:"hint",style:"margin-top:5px"},hint):null);}
+function input(val,on,ph="",type="text"){const i=el("input",{class:"inp",type,value:val||"",placeholder:ph});i.addEventListener("input",e=>on(e.target.value));return i;}
+function textarea(val,on,ph="",big=false){const t=el("textarea",{class:"ta"+(big?" big":""),placeholder:ph});t.value=val||"";t.addEventListener("input",e=>on(e.target.value));return t;}
+
+async function genIntervista(){
+  const c=S.composer;if(!c.tema.trim()){toast("Scrivi prima il tema.","warn");return;}
+  c.generating=true;render();
+  try{const r=await api("redazione-intervista",{tema:c.tema,pilastro:c.pilastro,tipo:c.tipo});
+    if(!r.ok){toast(r.errore||"Riprova.","err");}
+    else{c.intervista={domande:r.domande,risposte:new Array(r.domande.length).fill("")};}
+  }catch(e){toast("Errore: "+e.message,"err");}
+  c.generating=false;render();
+}
+async function saveIntervistaNext(){
+  const c=S.composer;
+  if(!c.id_intervista)c.id_intervista=uid("int");
+  try{await api("redazione-salva-intervista",{intervista:{id:c.id_intervista,id_contenuto:c.id,tema:c.tema,domande:c.intervista.domande,risposte:c.intervista.risposte,tipo:c.tipo}});}catch(e){}
+  c.step="testo";render();
+}
+async function genTesto(indicazione){
+  const c=S.composer;c.generating=true;render();
+  try{
+    const r=await api("redazione-genera",{id:c.id,tema:c.tema,pilastro:c.pilastro,tipo:c.tipo,
+      intervista:{domande:c.intervista.domande,risposte:c.intervista.risposte},indicazione:indicazione||""});
+    if(!r.ok){toast(r.errore||"Generazione fallita.","err");}
+    else{c.titolo=r.titolo||c.titolo;c.caption_ig=r.caption||"";c.testo_blog=r.articolo_html||"";
+      if(r.overlay&&r.overlay.length)c.overlay=r.overlay;
+      if(r.brief_foto)c.brief_foto=r.brief_foto;
+      c.cta_applicata=!!r.cta_applicata;c.dirty=true;toast("Contenuto generato.","ok");}
+  }catch(e){toast("Errore: "+e.message,"err");}
+  c.generating=false;render();
+}
+
+function suggerimentoOrario(){
+  const box=el("div",{class:"hint",style:"margin:-8px 0 10px;display:flex;gap:7px;align-items:center"},
+    el("button",{class:"btn btn-g btn-sm",onclick:async e=>{
+      const b=e.target;b.disabled=true;b.textContent="…";
+      try{const r=await api("edilnord-suggerisci-orario",undefined,{method:"GET"});
+        box.querySelector(".sug").textContent=r&&r.ok?`n8n suggerisce: ${r.weekday} ${r.suggestedTime} — ${r.reasonText}`:"Storico ancora troppo povero per un suggerimento affidabile.";
+      }catch(err){box.querySelector(".sug").textContent="Suggerimento non disponibile.";}
+      b.disabled=false;b.textContent="💡 Suggerisci";
+    }},"💡 Suggerisci"),
+    el("span",{class:"sug",style:"font-size:12px"},"Orario di default consigliato. Il suggerimento n8n è opzionale, non vincolante."));
+  return box;
+}
+
+/* preview */
+function previewPanel(){
+  const c=S.composer;const p=PILLARS[c.pilastro]||PILLARS.territorio;
+  const wrap=el("div",{class:"ig-preview"},el("div",{id:"prev-holder"}));
+  wrap.querySelector("#prev-holder").append(igCard());
+  return wrap;
+}
+function igCard(){
+  const c=S.composer;
+  if(c.tipo==="articolo_blog"){
+    return el("div",{class:"ig-card"},el("div",{class:"blog-prev"},
+      el("h1",{},c.titolo||"Titolo articolo"),
+      c.testo_blog?el("div",{html:sanitize(c.testo_blog)}):el("p",{style:"color:var(--muted)"},"L'anteprima dell'articolo apparirà qui dopo la generazione."),
+    ));
+  }
+  const isReel=c.tipo==="reel";
+  const media=el("div",{class:"ig-media"+(isReel?" reel":"")});
+  if(isReel&&c.url_video)media.append(el("video",{src:c.url_video,muted:true,loop:true,autoplay:true,playsinline:true}));
+  else if(c.foto.length){media.append(el("img",{src:c.foto[0]}));if(c.foto.length>1)media.append(el("div",{class:"cnt"},"1/"+c.foto.length));}
+  else media.append(el("div",{class:"empty"},isReel?"🎬 Il Reel apparirà qui":"📷 Carica una foto per l'anteprima"));
+  if(isReel&&c.overlay[0])media.append(el("div",{style:"position:absolute;left:0;right:0;bottom:22%;text-align:center;padding:0 14px"},
+    el("span",{style:"font-family:Anton;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);padding:5px 10px;font-size:17px;line-height:1.3;box-decoration-break:clone;-webkit-box-decoration-break:clone"},c.overlay[0])));
+  const cap=c.caption_ig||"";const firstLine=cap.split("\n")[0];
+  return el("div",{class:"ig-card"},
+    el("div",{class:"ig-top"},el("img",{src:LOGO}),el("div",{},el("div",{class:"ign"},IG_USER),el("div",{class:"igl"},"📍 "+(c.geotag||"Brugherio")))),
+    media,
+    el("div",{class:"ig-actions"},el("span",{},"♡"),el("span",{},"💬"),el("span",{},"➤"),el("span",{class:"r"},"🔖")),
+    el("div",{class:"ig-cap"},el("span",{class:"ign"},IG_USER),
+      cap?el("span",{},firstLine+(cap.length>firstLine.length?" ":""),cap.length>firstLine.length?el("span",{class:"more"},"… altro"):null):el("span",{class:"more"},"la caption apparirà qui"))
+  );
+}
+function sanitize(html){return String(html).replace(/<script[\s\S]*?<\/script>/gi,"").replace(/ on\w+="[^"]*"/gi,"");}
+function updatePreview(){const h=$("#prev-holder");if(h){h.innerHTML="";h.append(igCard());}}
+
+/* save / states */
+function composerToRow(stato){
+  const c=S.composer;
+  return {id:c.id,data:c.data,ora:c.ora||defaultOra(),pilastro:c.pilastro,tipo:c.tipo,titolo:c.titolo,
+    caption_ig:c.caption_ig,testo_blog:c.testo_blog,url_foto:c.foto.join(","),url_video:c.url_video,
+    stato,id_intervista:c.id_intervista,richiedi_ok_esplicito:c.richiedi_ok?"true":"false",
+    geotag:c.geotag,note:c.brief_foto,cta:c.cta_applicata?"valutatore":""};
+}
+async function saveDraft(){
+  const c=S.composer;if(!c)return;
+  const existing=slotById(c.id);
+  const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";
+  const row=composerToRow(stato);
+  try{await api("redazione-salva-contenuto",{contenuto:row});
+    upsertLocal(row);c.dirty=false;render();toast("Bozza salvata.","ok");
+  }catch(e){toast("Salvataggio fallito: "+e.message,"err");}
+}
+async function setPronto(){
+  const c=S.composer;const g=stepGuards();
+  if(!g.hasIntervista||!g.hasFoto){toast("Mancano intervista o foto.","warn");return;}
+  // reel da montare (foto/clip) → chiama monta-reel
+  if(c.tipo==="reel"&&!c.url_video&&c.foto.length>=3){
+    const prog=progressToast("Monto il Reel con ffmpeg…");
+    try{await api("redazione-monta-reel",{id:c.id,foto:c.foto,overlay:c.overlay.filter(Boolean)});
+      prog.done();toast("Montaggio avviato: il video arriverà sul contenuto tra poco.","ok");}
+    catch(e){prog.remove();toast("Montaggio non avviato: "+e.message,"err");}
+  }
+  const v=vacInfo();
+  if(c.richiedi_ok&&v.on&&c.data>=v.i&&c.data<=v.f)
+    toast("In vacanza questo contenuto (OK esplicito) resterà in attesa e non uscirà.","warn",6000);
+  const row=composerToRow("pronto");
+  try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;
+    toast("Contenuto pronto per la pubblicazione.","ok");nav("calendario");}
+  catch(e){toast("Errore: "+e.message,"err");}
+}
+function upsertLocal(row){const i=S.data.calendario.findIndex(x=>x.id===row.id);if(i>=0)S.data.calendario[i]=Object.assign(S.data.calendario[i],row);else S.data.calendario.push(row);}
+
+/* ============================================================ BATCH */
+function BatchView(){
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},"Modalità Batch"),el("div",{class:"sub"},"Un tema madre, una sola intervista, tanti contenuti diversi in un colpo. Serve per riempire agosto e le chiusure lavorando da PC.")),
+    el("div",{class:"hrow"},S.batch?el("button",{class:"btn btn-g",onclick:()=>{S.batch=null;render();}},"↺ Ricomincia"):null)
+  ));
+  if(!S.batch)return frag.append(batchSetup()),frag;
+  if(S.batch.phase==="intervista")return frag.append(batchIntervista()),frag;
+  return frag.append(batchTable()),frag;
+}
+function batchSetup(){
+  const b={tema:"",n:4};
+  const panel=el("div",{class:"panel",style:"max-width:680px"});
+  panel.append(el("h2",{},"Tema madre"),el("p",{class:"pd"},"Es. \"I valori per quartiere a Brugherio\". Da qui nasceranno 3-6 contenuti con angoli diversi."));
+  panel.append(field("Tema",textarea("",v=>b.tema=v,"Un tema ampio che si può declinare in più angoli")));
+  panel.append(field("Quanti contenuti",(()=>{const s=el("select",{class:"sel",onchange:e=>b.n=+e.target.value},...[3,4,5,6].map(n=>el("option",{value:n},n+" contenuti")));s.value="4";return s;})()));
+  panel.append(el("button",{class:"btn btn-p",onclick:async()=>{
+    if(!b.tema.trim()){toast("Scrivi il tema madre.","warn");return;}
+    S.batch={tema:b.tema,n:b.n,phase:"intervista",intervista:null,generating:false};render();
+    await batchGenIntervista();
+  }},"Prepara l'intervista →"));
+  return panel;
+}
+async function batchGenIntervista(){
+  S.batch.generating=true;render();
+  try{const r=await api("redazione-intervista",{tema:S.batch.tema,pilastro:"",batch:true});
+    if(r.ok)S.batch.intervista={domande:r.domande,risposte:new Array(r.domande.length).fill("")};
+    else toast(r.errore||"Riprova.","err");
+  }catch(e){toast("Errore: "+e.message,"err");}
+  S.batch.generating=false;render();
+}
+function batchIntervista(){
+  const b=S.batch;const panel=el("div",{class:"panel",style:"max-width:760px"});
+  panel.append(el("h2",{},"Intervista ampia"),el("p",{class:"pd"},"Copri più angoli: da qui l'AI ricava contenuti diversi tra loro."));
+  if(b.generating||!b.intervista)return panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Preparo le domande…")),panel;
+  b.intervista.domande.forEach((d,qi)=>{
+    const card=el("div",{class:"qcard"},el("div",{class:"qtag"},d.tipo==="rapida"?"Rapida":"Aperta"),el("div",{class:"qq"},d.testo));
+    if(d.tipo==="rapida"&&d.opzioni){const opts=el("div",{class:"qopts"});d.opzioni.forEach(o=>opts.append(el("button",{class:"qopt"+(b.intervista.risposte[qi]===o?" on":""),onclick:()=>{b.intervista.risposte[qi]=o;render();}},o)));card.append(opts);}
+    card.append(textarea(b.intervista.risposte[qi]||"",v=>b.intervista.risposte[qi]=v,"La tua risposta…"));
+    panel.append(card);
+  });
+  const has=b.intervista.risposte.some(r=>String(r||"").trim());
+  panel.append(el("div",{class:"cbar"},el("span",{}),
+    el("button",{class:"btn btn-p",disabled:!has||b.generating,onclick:batchGenera},b.generating?"Genero…":"Genera "+b.n+" contenuti →")));
+  if(!has)panel.append(el("div",{class:"gate-warn"},"✍️","Rispondi ad almeno una domanda."));
+  return panel;
+}
+async function batchGenera(){
+  const b=S.batch;b.generating=true;render();
+  const prog=progressToast("Genero "+b.n+" contenuti diversi…");
+  try{const r=await api("redazione-genera-batch",{tema:b.tema,n:b.n,intervista:{domande:b.intervista.domande,risposte:b.intervista.risposte}});
+    prog.done();
+    if(!r.ok){toast(r.errore||"Riprova.","err");b.generating=false;render();return;}
+    b.rows=r.contenuti.map(x=>({id:uid("ig"),titolo:x.titolo,pilastro:x.pilastro,tipo:x.tipo,caption_ig:x.caption,
+      testo_blog:x.articolo_html||"",overlay:x.overlay||[],brief_foto:x.brief_foto||"",foto:[],url_video:"",
+      data:"",ora:"",sel:false}));
+    b.phase="table";
+  }catch(e){prog.remove();toast("Errore: "+e.message,"err");}
+  b.generating=false;render();
+}
+function batchTable(){
+  const b=S.batch;const frag=el("div",{});
+  const sel=b.rows.filter(r=>r.sel);
+  frag.append(el("div",{class:"bulkbar"},
+    el("span",{class:"bc"},b.rows.length+" contenuti · "+sel.length+" selezionati"),
+    el("button",{class:"btn btn-g btn-sm",onclick:()=>{distribuisci();}},"📅 Distribuisci sugli slot"),
+    el("button",{class:"btn btn-g btn-sm",onclick:()=>bulkSave("bozza",sel.length?sel:b.rows)},"💾 Salva tutti in bozza"),
+    el("button",{class:"btn btn-p btn-sm",onclick:()=>bulkReady(sel.length?sel:b.rows)},"✓ Marca pronti"),
+    sel.length?el("button",{class:"btn btn-danger btn-sm",onclick:()=>{b.rows=b.rows.filter(r=>!r.sel);render();}},"Elimina selezionati"):null
+  ));
+  const t=el("table",{class:"batch"});
+  t.append(el("thead",{},el("tr",{},
+    el("th",{style:"width:32px"},(()=>{const cb=el("input",{type:"checkbox",onchange:e=>{b.rows.forEach(r=>r.sel=e.target.checked);render();}});return cb;})()),
+    el("th",{},"Titolo"),el("th",{style:"width:130px"},"Pilastro"),el("th",{style:"width:96px"},"Tipo"),
+    el("th",{},"Caption"),el("th",{style:"width:140px"},"Media"),el("th",{style:"width:150px"},"Slot"))));
+  const tb=el("tbody",{});
+  b.rows.forEach(r=>{
+    const hasFoto=r.tipo==="reel"?(r.url_video||r.foto.length>=3):r.foto.length>0;
+    const tr=el("tr",{class:hasFoto?"":"nofoto"});
+    tr.append(el("td",{},(()=>{const cb=el("input",{type:"checkbox"});cb.checked=r.sel;cb.onchange=e=>{r.sel=e.target.checked;render();};return cb;})()));
+    tr.append(el("td",{},(()=>{const i=el("input",{class:"tin",value:r.titolo,style:"font-weight:600"});i.oninput=e=>r.titolo=e.target.value;return i;})()));
+    tr.append(el("td",{},(()=>{const s=el("select",{class:"tin"},...["territorio","dati","reale","reel"].map(p=>{const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label);if(r.pilastro===p)o.selected=true;return o;}));s.onchange=e=>r.pilastro=e.target.value;return s;})()));
+    tr.append(el("td",{},(()=>{const s=el("select",{class:"tin"},...[["post_ig","Post"],["reel","Reel"],["articolo_blog","Blog"]].map(([v,l])=>{const o=el("option",{value:v},l);if(r.tipo===v)o.selected=true;return o;}));s.onchange=e=>r.tipo=e.target.value;return s;})()));
+    tr.append(el("td",{},(()=>{const ta=el("textarea",{class:"tin",style:"min-height:54px;resize:vertical"});ta.value=r.caption_ig;ta.oninput=e=>r.caption_ig=e.target.value;return ta;})()));
+    // media cell
+    const mc=el("td",{});
+    const lab=el("label",{class:"btn btn-g btn-sm",style:"cursor:pointer"},hasFoto?"✓ "+(r.url_video?"video":r.foto.length+" foto"):"＋ carica");
+    const fin=el("input",{type:"file",accept:r.tipo==="reel"?"video/*,image/*":"image/*",multiple:true,style:"display:none"});
+    fin.onchange=async e=>{const files=[...e.target.files];lab.textContent="…";try{for(const f of files){const res=await uploadFoto(f);if(f.type.startsWith("video"))r.url_video=res.url;else r.foto.push(res.url);}render();}catch(err){toast("Upload: "+err.message,"err");render();}};
+    lab.append(fin);lab.onclick=()=>fin.click();mc.append(lab);tr.append(mc);
+    // slot cell
+    tr.append(el("td",{},(()=>{const i=el("input",{class:"tin",type:"date",value:r.data});i.oninput=e=>r.data=e.target.value;return i;})(),
+      (()=>{const i=el("input",{class:"tin",type:"time",value:r.ora,style:"margin-top:3px"});i.oninput=e=>r.ora=e.target.value;return i;})()));
+    tb.append(tr);
+  });
+  t.append(tb);
+  frag.append(el("div",{class:"tbl-wrap"},t));
+  frag.append(el("div",{class:"gate-warn",style:"margin-top:14px"},"📷","Vincolo attivo: le righe evidenziate in rosso non hanno media e resteranno in bozza — non diventano \"pronto\" finché non carichi una foto."));
+  return frag;
+}
+function distribuisci(){
+  const b=S.batch;
+  const today=todayStr();
+  const freeByPil={};
+  visibleSlots().filter(s=>s.stato==="vuoto"&&s.data>=today).sort((a,b2)=>a.data.localeCompare(b2.data)).forEach(s=>{(freeByPil[s.pilastro]=freeByPil[s.pilastro]||[]).push(s);});
+  let placed=0;
+  b.rows.forEach(r=>{if(r.data)return;const pool=freeByPil[r.pilastro]||freeByPil.reel||[];const slot=pool.shift();if(slot){r.data=slot.data;r.ora=slot.ora;r._slotId=slot.id;placed++;}});
+  render();toast(placed?("Assegnati "+placed+" contenuti ai prossimi slot liberi."):"Nessuno slot libero coerente trovato.",placed?"ok":"warn");
+}
+async function bulkSave(stato,rows){
+  const payload=rows.map(r=>batchRowToContenuto(r,stato));
+  if(!payload.length)return;
+  try{await api("redazione-salva-contenuto",{contenuti:payload});payload.forEach(upsertLocal);toast(payload.length+" contenuti salvati in bozza.","ok");}
+  catch(e){toast("Errore: "+e.message,"err");}
+}
+async function bulkReady(rows){
+  const ok=rows.filter(r=>r.data&&(r.tipo==="reel"?(r.url_video||r.foto.length>=3):r.foto.length>0));
+  const ko=rows.length-ok.length;
+  if(!ok.length){toast("Nessun contenuto ha foto + slot: restano in bozza.","warn");return;}
+  const payload=ok.map(r=>batchRowToContenuto(r,"pronto"));
+  try{await api("redazione-salva-contenuto",{contenuti:payload});payload.forEach(upsertLocal);
+    toast(ok.length+" pronti"+(ko?", "+ko+" ancora senza foto/slot (in bozza)":"")+".",ko?"warn":"ok");}
+  catch(e){toast("Errore: "+e.message,"err");}
+}
+function batchRowToContenuto(r,stato){
+  const hasFoto=r.tipo==="reel"?(r.url_video||r.foto.length>=3):r.foto.length>0;
+  return {id:r.id,data:r.data,ora:r.ora||"",pilastro:r.pilastro,tipo:r.tipo,titolo:r.titolo,caption_ig:r.caption_ig,
+    testo_blog:r.testo_blog,url_foto:r.foto.join(","),url_video:r.url_video,
+    stato:(stato==="pronto"&&hasFoto&&r.data)?"pronto":"bozza",geotag:"Brugherio",note:r.brief_foto};
+}
+
+/* ============================================================ LISTA SPESA */
+function SpesaView(){
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},"Lista della spesa media")),
+    el("div",{class:"hrow"},el("button",{class:"btn btn-g",onclick:exportSpesa},"📤 Manda su Telegram / copia"))));
+  frag.append(el("div",{class:"sub",style:"margin-top:-14px;margin-bottom:22px;max-width:60ch"},"Tutti i contenuti in bozza senza media, raggruppati per luogo. Esci a fotografare una volta e torna con tutto."));
+  const need=visibleSlots().filter(s=>s.stato==="bozza"&&s.tipo!=="esterno"&&!(s.url_foto&&s.url_foto.trim())&&!(s.url_video&&s.url_video.trim()));
+  if(!need.length)return frag.append(emptyState("✅","Niente da fotografare","Tutte le bozze hanno già i loro media.")),frag;
+  const groups={};
+  need.forEach(s=>{const place=guessPlace(s);(groups[place]=groups[place]||[]).push(s);});
+  Object.keys(groups).forEach(place=>{
+    const box=el("div",{class:"spesa-place"},el("div",{class:"sph"},el("span",{class:"pin"},place==="Ufficio"?"🏠":"📍"),place));
+    groups[place].forEach(s=>{
+      const done=!!S.spesaChecked[s.id];
+      const p=PILLARS[s.pilastro]||PILLARS.territorio;
+      const item=el("div",{class:"spesa-item"+(done?" done":"")},
+        el("div",{class:"chk"+(done?" on":""),onclick:()=>{S.spesaChecked[s.id]=!done;render();}},done?"✓":""),
+        el("div",{class:"si-txt"},el("b",{},s.brief||s.note||(p.emoji+" "+(s.titolo||p.label))),
+          el("small",{},fmtDate(s.data)+" · "+p.label+" · "+(s.note||"foto reale del contenuto"))),
+        (()=>{const lab=el("label",{class:"btn btn-g btn-sm",style:"cursor:pointer"},"📷 Carica");
+          const fin=el("input",{type:"file",accept:"image/*,video/*",multiple:true,style:"display:none"});
+          fin.onchange=async e=>{const files=[...e.target.files];lab.textContent="…";try{const urls=[];let vid="";for(const f of files){const res=await uploadFoto(f);if(f.type.startsWith("video"))vid=res.url;else urls.push(res.url);}
+            const row=Object.assign({},s,{url_foto:urls.join(","),url_video:vid||s.url_video,aggiornato_il:new Date().toISOString()});
+            await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);toast("Media agganciato a \""+(s.titolo||"contenuto")+"\".","ok");render();}
+            catch(err){toast("Upload: "+err.message,"err");render();}};
+          lab.append(fin);lab.onclick=()=>fin.click();return lab;})()
+      );
+      box.append(item);
+    });
+    frag.append(box);
+  });
+  return frag;
+}
+function guessPlace(s){
+  const t=((s.note||"")+" "+(s.titolo||"")+" "+(s.brief_foto||"")).toLowerCase();
+  const m=t.match(/via\s+[a-zà-ù]+|piazza\s+[a-zà-ù]+|cantiere[^,.]*|quartiere\s+[a-zà-ù]+|san damiano|increa|kennedy|centro/i);
+  if(m)return m[0].replace(/\b\w/g,c=>c.toUpperCase()).trim();
+  if(/planimetr|ufficio|tavolo|scrivania/.test(t))return "Ufficio";
+  return "Da definire";
+}
+function exportSpesa(){
+  const need=visibleSlots().filter(s=>s.stato==="bozza"&&s.tipo!=="esterno"&&!(s.url_foto&&s.url_foto.trim())&&!(s.url_video&&s.url_video.trim()));
+  if(!need.length){toast("Niente da esportare.","warn");return;}
+  const groups={};need.forEach(s=>{const p=guessPlace(s);(groups[p]=groups[p]||[]).push(s);});
+  let txt="🛒 LISTA DELLA SPESA MEDIA — Redazione Edilnord\n\n";
+  Object.keys(groups).forEach(pl=>{txt+=(pl==="Ufficio"?"🏠 ":"📍 ")+pl+"\n";groups[pl].forEach(s=>{txt+="  • "+(s.note||s.titolo||PILLARS[s.pilastro].label)+" ("+fmtDate(s.data)+")\n";});txt+="\n";});
+  modalCustom("Lista della spesa","Copia il testo e incollalo su Telegram, oppure invialo direttamente.",
+    [el("textarea",{class:"ta big",readonly:true},txt)],
+    "Copia negli appunti",close=>{navigator.clipboard.writeText(txt).then(()=>{toast("Copiato.","ok");close();});},
+    "Invia su Telegram",async close=>{try{await api("redazione-salva-config",{config:[]});}catch(e){}
+      // usa il webhook telegram-cmd? no: nessun endpoint invio libero. Consiglio copia.
+      navigator.clipboard.writeText(txt);toast("Copiato: incollalo nel bot Telegram.","ok");close();});
+}
+
+/* ============================================================ IMPOSTAZIONI */
+function SettingsView(){
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},el("div",{},el("h1",{},"Impostazioni"),
+    el("div",{class:"sub"},"Modalità Vacanza, stato di pubblicazione e chiave. Le modifiche si salvano sullo Sheet Config."))));
+  const v=vacInfo();
+  // Vacanza
+  const vp=el("div",{class:"panel",style:"margin-bottom:20px"});
+  vp.append(el("h2",{},"🏖️ Modalità Vacanza"),el("p",{class:"pd"},"Nei periodi di chiusura i contenuti pronti escono da soli senza finestra di blocco. Telegram diventa solo informativo. Non genera né completa nulla da sola."));
+  const von=el("label",{class:"hrow",style:"cursor:pointer;font-weight:700;gap:9px;margin-bottom:14px"},
+    (()=>{const cb=el("input",{type:"checkbox"});cb.checked=v.on;cb.onchange=e=>saveConfig({VACANZA_ATTIVA:e.target.checked?"true":"false"});return cb;})(),
+    "Attiva Modalità Vacanza");
+  vp.append(von);
+  vp.append(el("div",{class:"hrow"},
+    field("Dal",input(v.i,val=>S._vi=val,"","date")),
+    field("Al",input(v.f,val=>S._vf=val,"","date"))));
+  vp.append(el("div",{class:"hrow",style:"gap:7px;margin-bottom:14px"},...[["Agosto","2026-08-01","2026-08-31"],["Natale","2026-12-24","2027-01-06"],["Pasqua","2027-03-26","2027-04-05"],["Ponte","",""]].map(([l,i,f])=>
+    el("button",{class:"btn btn-g btn-sm",onclick:()=>{if(i){S._vi=i;S._vf=f;saveConfig({VACANZA_INIZIO:i,VACANZA_FINE:f});}}},l))));
+  vp.append(el("button",{class:"btn btn-p btn-sm",onclick:()=>saveConfig({VACANZA_INIZIO:S._vi||v.i,VACANZA_FINE:S._vf||v.f})},"Salva date"));
+  vp.append(el("div",{style:"margin-top:14px"},field("Cadenza ridotta (opzionale)",(()=>{const s=el("select",{class:"sel",onchange:e=>saveConfig({CADENZA_VACANZA:e.target.value})},
+    el("option",{value:""},"Pubblica tutti i pilastri"),el("option",{value:"skip:reale"},"Salta la Vetrina (Reale)"),el("option",{value:"skip:reel"},"Salta i Reel"));s.value=cfg("CADENZA_VACANZA","");return s;})())));
+  frag.append(vp);
+  // DRY_RUN
+  const dp=el("div",{class:"panel",style:"margin-bottom:20px"});
+  dp.append(el("h2",{},"🚦 Stato di pubblicazione"),el("p",{class:"pd"},"Con DRY-RUN attivo il motore fa tutto (anche le anteprime Telegram) tranne la pubblicazione vera: scrive \"SIMULATO\". Il passaggio a LIVE è un checkpoint da concordare."));
+  dp.append(el("div",{class:"hrow"},
+    el("div",{class:"dry-pill "+(isDry()?"on":"off"),style:"font-size:13px"},el("span",{class:"dot"}),isDry()?"DRY-RUN attivo — nessuna pubblicazione reale":"LIVE — pubblica davvero"),
+    el("div",{style:"font-size:12px;color:var(--muted)"},"(si cambia solo lato n8n, come da checkpoint)")));
+  frag.append(dp);
+  // Chiave
+  const kp=el("div",{class:"panel"});
+  kp.append(el("h2",{},"🔐 Sessione"),el("p",{class:"pd"},"La chiave resta solo in memoria. Uscendo o ricaricando dovrai reinserirla."));
+  kp.append(el("button",{class:"btn btn-g",onclick:()=>{S.key=null;S.ready=false;S.data={calendario:[],idee:[],config:{},immobili:[]};render();}},"Esci dalla sessione"));
+  frag.append(kp);
+  return frag;
+}
+async function saveConfig(obj){
+  const arr=Object.entries(obj).map(([chiave,valore])=>({chiave,valore}));
+  Object.assign(S.data.config,obj);render();
+  try{await api("redazione-salva-config",{config:arr});toast("Impostazione salvata.","ok");}
+  catch(e){toast("Errore: "+e.message,"err");}
+}
+
+/* ============================================================ shared UI */
+function emptyState(icon,title,desc){return el("div",{class:"empty-state"},el("div",{class:"ei"},icon),el("h3",{},title),el("p",{},desc));}
+function progressToast(msg){
+  const t=el("div",{class:"toast"},el("div",{class:"tt"},msg,el("div",{class:"progress"},el("i",{style:"width:15%"}))));
+  $("#toasts").append(t);const bar=t.querySelector("i");let w=15;
+  const iv=setInterval(()=>{w=Math.min(w+Math.random()*12,90);bar.style.width=w+"%";},700);
+  return {done(){clearInterval(iv);bar.style.width="100%";setTimeout(()=>{t.style.opacity="0";setTimeout(()=>t.remove(),300);},500);},remove(){clearInterval(iv);t.remove();}};
+}
+function toastUndo(msg,undo){
+  const t=el("div",{class:"toast ok"},el("span",{class:"tt"},msg),el("button",{class:"btn btn-sm",style:"background:rgba(255,255,255,.2);color:#fff",onclick:()=>{undo();t.remove();}},"Annulla"));
+  $("#toasts").append(t);setTimeout(()=>{t.style.opacity="0";setTimeout(()=>t.remove(),300);},6000);
+}
+function modalRoot(){return $("#modal-root");}
+function closeModal(){modalRoot().innerHTML="";document.onkeydown=S.view==="composer"?document.onkeydown:null;}
+function modalInfo(title,body){
+  const bd=el("div",{class:"backdrop",onclick:e=>{if(e.target===bd)closeModal();}},
+    el("div",{class:"modal"},el("h2",{},title),el("p",{},body),
+      el("div",{class:"ma"},el("button",{class:"btn btn-p",onclick:closeModal},"Ho capito"))));
+  modalRoot().append(bd);
+}
+function modalConfirm(title,body,okLabel,onOk,variant){
+  const bd=el("div",{class:"backdrop",onclick:e=>{if(e.target===bd)closeModal();}},
+    el("div",{class:"modal"},el("h2",{},title),el("p",{},body),
+      el("div",{class:"ma"},el("button",{class:"btn btn-g",onclick:closeModal},"Annulla"),
+        el("button",{class:"btn "+(variant==="danger"?"btn-danger":"btn-p"),onclick:()=>{closeModal();onOk();}},okLabel))));
+  modalRoot().append(bd);
+}
+function modalCustom(title,body,fields,okLabel,onOk,okLabel2,onOk2){
+  const bd=el("div",{class:"backdrop",onclick:e=>{if(e.target===bd)closeModal();}});
+  const acts=el("div",{class:"ma"},el("button",{class:"btn btn-g",onclick:closeModal},"Chiudi"));
+  if(okLabel2)acts.append(el("button",{class:"btn btn-g",onclick:()=>onOk2(closeModal)},okLabel2));
+  acts.append(el("button",{class:"btn btn-p",onclick:()=>onOk(closeModal)},okLabel));
+  bd.append(el("div",{class:"modal"},el("h2",{},title),el("p",{},body),...fields,acts));
+  modalRoot().append(bd);
+}
+
+/* ---------- boot ---------- */
+S.ready=false;render();
+</script>
+</body>
+</html>
