@@ -796,7 +796,7 @@ function startComposer(slot,extra={}){
     data:slot?slot.data:"",ora:slot?slot.ora:"",
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
     tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"post_ig"),
-    tema:idea?idea.titolo:(slot&&slot.titolo?slot.titolo:""),
+    tema:idea?idea.titolo:(slot&&slot.tema?slot.tema:slot&&slot.titolo?slot.titolo:""),
     titolo:slot?slot.titolo||"":"",
     caption_ig:slot?slot.caption_ig||"":"",
     testo_blog:slot?slot.testo_blog||"":"",
@@ -808,10 +808,11 @@ function startComposer(slot,extra={}){
     geotag:slot?slot.geotag||"Brugherio":"Brugherio",
     richiedi_ok:slot?String(slot.richiedi_ok_esplicito).toLowerCase()==="true":false,
     id_intervista:slot?slot.id_intervista||"":"",
-    intervista:null,       // {domande:[],risposte:[]}
-    step:"idea",
+    intervista:null,
+    step:slot?(slot.caption_ig?"testo":slot.id_intervista?"intervista":"idea"):"idea",
     hooks:[],hookScelto:null,
-    dirty:false, generating:false, uploading:false, cta_applicata:false
+    dirty:false, generating:false, uploading:false,
+    cta_applicata:slot?slot.cta==="valutatore":false
   };
   S.view="composer";render();
 }
@@ -1150,7 +1151,8 @@ function updatePreview(){const h=$("#prev-holder");if(h){h.innerHTML="";h.append
 /* save / states */
 function composerToRow(stato){
   const c=S.composer;
-  return {id:c.id,data:c.data,ora:c.ora||defaultOra(),pilastro:c.pilastro,tipo:c.tipo,titolo:c.titolo,
+  return {id:c.id,data:c.data,ora:c.ora||defaultOra(),pilastro:c.pilastro,tipo:c.tipo,
+    titolo:c.titolo||c.tema,tema:c.tema,
     caption_ig:c.caption_ig,testo_blog:c.testo_blog,url_foto:c.foto.join(","),url_video:c.url_video,
     stato,id_intervista:c.id_intervista,richiedi_ok_esplicito:c.richiedi_ok?"true":"false",
     geotag:c.geotag,note:c.brief_foto,cta:c.cta_applicata?"valutatore":""};
