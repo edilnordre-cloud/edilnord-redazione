@@ -386,10 +386,16 @@ async function api(path,body,{method="POST"}={}){
   return ct.includes("json")?r.json():r.text();
 }
 async function uploadFoto(file){
-  const fd=new FormData();fd.append("data",file,file.name||"foto.jpg");
-  const r=await fetch(API+"/edilnord-upload-foto",{method:"POST",body:fd});
-  if(!r.ok)throw new Error("Upload fallito ("+r.status+").");
-  return r.json(); // {url,id}
+  const rt=file.type.startsWith("video/")?"video":"image";
+  const fd=new FormData();
+  fd.append("file",file,file.name||(rt==="video"?"media.mp4":"foto.jpg"));
+  fd.append("upload_preset","edilnordre");
+  fd.append("folder","contenuti");
+  const r=await fetch("https://api.cloudinary.com/v1_1/duwp3az9m/"+rt+"/upload",{method:"POST",body:fd});
+  if(!r.ok)throw new Error("Upload Cloudinary fallito ("+r.status+").");
+  const j=await r.json();
+  if(j.error)throw new Error(j.error.message||"Upload rifiutato.");
+  return {url:j.secure_url,id:j.public_id};
 }
 
 /* ---------- data helpers ---------- */
@@ -660,7 +666,7 @@ function openGeneraIdee(){
     "Genera",async(close)=>{
       close();
       const prog=progressToast("Genero "+n+" idee dal territorio…");
-      try{await api("redazione-genera-idee",{n,pilastro:pil});
+      try{await api("redazione-agente-idee",{quantita:n,pilastro:pil});
         prog.done();pollIdee(6);
       }catch(e){prog.remove();toast("Errore: "+e.message,"err");}
     });
