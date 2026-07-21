@@ -923,7 +923,8 @@ function stepPanel(){
     if(c.generating){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Genero le varianti hook…"));
     } else if(!c.hooks||!c.hooks.length){
-      panel.append(el("button",{class:"btn btn-p",onclick:genHooks},"✨ Genera 4 varianti hook"));
+      if(!c._autoGenHooks){c._autoGenHooks=true;setTimeout(()=>genHooks(),50);}
+      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Genero le varianti hook…"));
     } else {
       const TIPO_LABEL={numero_dato:"Numero / dato",domanda:"Domanda",contrasto:"Contrasto",curiosita:"Curiosità"};
       const grid=el("div",{class:"hook-grid"});
