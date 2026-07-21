@@ -174,6 +174,10 @@ a{color:var(--sage-ink)}
 .idea details.domande{font-size:12px;color:var(--ink-2)}
 .idea details.domande summary{cursor:pointer;color:var(--muted);user-select:none;list-style:none;padding:2px 0}
 .idea details.domande ol{margin:6px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+.idea.idea-dev{border-left:3px solid var(--sage);opacity:.92}
+.idea.idea-dev h3{font-size:15px}
+.idea.idea-dev .inp{resize:vertical;min-height:56px;font-size:13px;padding:8px 10px;width:100%}
+.dev-section-title{font-size:15px;font-weight:700;color:var(--ink-2);margin:30px 0 14px;padding-bottom:9px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
 
 /* ---------- Composer ---------- */
 .composer{display:grid;grid-template-columns:1fr;gap:0}
@@ -622,34 +626,68 @@ function IdeeView(){
       el("button",{class:"btn btn-g",onclick:openGeneraIdee},"⚡ Genera idee ora"))
   ));
   const nuove=S.data.idee.filter(i=>i.stato==="nuova");
-  if(!nuove.length)return frag.append(emptyState("💡","Nessuna idea in attesa","Usa \"Genera idee ora\" per riempire in blocco, oppure aspetta la proposta del lunedì mattina.")),frag;
-  const grid=el("div",{class:"idea-grid"});
-  nuove.forEach(i=>{
-    const p=PILLARS[i.pilastro]||PILLARS.territorio;
-    const score=parseInt(i.punteggio)||0;
-    const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
-    grid.append(el("div",{class:"idea"},
-      el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
-        i.formato?el("span",{class:"chip p-esterno"},i.formato):null,
-        score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
-      el("h3",{},i.titolo),
-      i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
-      (i.angolo_locale||i.luogo)?el("div",{class:"angle"},"📍 "+(i.angolo_locale||i.luogo)):null,
-      i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
-      i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
-      domande.length?el("details",{class:"domande"},
-        el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
-        el("ol",{},...domande.map(d=>el("li",{},d)))
-      ):null,
-      el("div",{class:"ia"},
-        el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"✓ Sviluppa"),
-        el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
-    ));
-  });
-  frag.append(grid);return frag;
+  if(!nuove.length){
+    frag.append(emptyState("💡","Nessuna idea in attesa","Usa \"Genera idee ora\" per riempire in blocco, oppure aspetta la proposta del lunedì mattina."));
+  }else{
+    const grid=el("div",{class:"idea-grid"});
+    nuove.forEach(i=>{
+      const p=PILLARS[i.pilastro]||PILLARS.territorio;
+      const score=parseInt(i.punteggio)||0;
+      const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
+      grid.append(el("div",{class:"idea"},
+        el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+          el("span",{class:"chip p-esterno"},i.pilastro==="reel"?"Reel":"Articolo + Post IG"),
+          score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
+        el("h3",{},i.titolo),
+        i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
+        (i.angolo_locale||i.luogo)?el("div",{class:"angle"},"📍 "+(i.angolo_locale||i.luogo)):null,
+        i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
+        i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
+        domande.length?el("details",{class:"domande"},
+          el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
+          el("ol",{},...domande.map(d=>el("li",{},d)))
+        ):null,
+        el("div",{class:"ia"},
+          el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"✓ Sviluppa"),
+          el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
+      ));
+    });
+    frag.append(grid);
+  }
+  const accettate=S.data.idee.filter(i=>i.stato==="accettata");
+  if(accettate.length){
+    frag.append(el("div",{class:"dev-section-title"},"🔨 In sviluppo",el("span",{style:"font-weight:400;font-size:13px;color:var(--muted)"},accettate.length+(accettate.length===1?" idea":" idee"))));
+    const devGrid=el("div",{class:"idea-grid"});
+    accettate.forEach(i=>{
+      const p=PILLARS[i.pilastro]||PILLARS.territorio;
+      const score=parseInt(i.punteggio)||0;
+      const slotAssociato=(S.data.calendario||[]).find(s=>s.tema===i.titolo&&s.stato!=="scartato");
+      const dataSlot=slotAssociato?slotAssociato.data:"";
+      const ta=el("textarea",{class:"inp",rows:"2",placeholder:"Aggiorna lo stato… es. “5 ago: testo pronto, aspetto foto”"});
+      ta.value=i.nota_sviluppo||"";
+      devGrid.append(el("div",{class:"idea idea-dev"},
+        el("div",{class:"hrow",style:"gap:7px"},
+          el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+          dataSlot?el("span",{class:"chip p-esterno"},"📅 "+fmtDate(dataSlot)):null,
+          score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
+        el("h3",{},i.titolo),
+        i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
+        ta,
+        el("div",{class:"ia"},
+          el("button",{class:"btn btn-p btn-sm",onclick:async()=>{
+            i.nota_sviluppo=ta.value;
+            try{await api("redazione-salva-idea",{idea:i});toast("Nota salvata.","ok");}
+            catch(e){toast("Errore: "+e.message,"err");}
+          }},"💾 Salva nota"),
+          el("button",{class:"btn btn-g btn-sm",onclick:()=>startComposer(slotAssociato||null,{idea:i})},"✎ Riapri"))
+      ));
+    });
+    frag.append(devGrid);
+  }
+  return frag;
 }
 async function accettaIdea(i){
-  const tipo=i.formato==="articolo+post"?"articolo_blog":(i.pilastro==="reel"?"reel":"post_ig");
+  const tipo=i.pilastro==="reel"?"reel":"articolo_blog";
   const slot=findFreeSlot(i.pilastro,tipo);
   i.stato="accettata";
   try{await api("redazione-salva-idea",{idea:i});}catch(e){}
@@ -706,7 +744,7 @@ function startComposer(slot,extra={}){
     isNew:!slot,
     data:slot?slot.data:"",ora:slot?slot.ora:"",
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
-    tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.formato==="articolo+post"?"articolo_blog":"post_ig"):"post_ig"),
+    tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"articolo_blog"):"post_ig"),
     tema:idea?idea.titolo:(slot&&slot.titolo?slot.titolo:""),
     titolo:slot?slot.titolo||"":"",
     caption_ig:slot?slot.caption_ig||"":"",
