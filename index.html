@@ -852,7 +852,8 @@ function stepPanel(){
   else if(c.step==="testo"){
     panel.append(el("h2",{},"Testo & caption"),el("p",{class:"pd"},"Generato dalle tue risposte. Modifica liberamente inline."));
     if(!c.caption_ig&&!c.generating){
-      panel.append(el("button",{class:"btn btn-p",onclick:()=>genTesto()},"✨ Genera dal l'intervista"));
+      if(!c._autoGenTesto){c._autoGenTesto=true;setTimeout(()=>genTesto(),50);}
+      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo il testo…"));
     }else if(c.generating){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
     }else{
