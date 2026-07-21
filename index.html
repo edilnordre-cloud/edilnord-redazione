@@ -636,7 +636,6 @@ function IdeeView(){
       const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
       grid.append(el("div",{class:"idea"},
         el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
-          el("span",{class:"chip p-esterno"},i.pilastro==="reel"?"Reel":"Articolo + Post IG"),
           score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
         el("h3",{},i.titolo),
         i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
