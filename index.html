@@ -687,7 +687,7 @@ function IdeeView(){
   return frag;
 }
 async function accettaIdea(i){
-  const tipo=i.pilastro==="reel"?"reel":"articolo_blog";
+  const tipo=i.pilastro==="reel"?"reel":"entrambi";
   const slot=findFreeSlot(i.pilastro,tipo);
   i.stato="accettata";
   try{await api("redazione-salva-idea",{idea:i});}catch(e){}
@@ -744,7 +744,7 @@ function startComposer(slot,extra={}){
     isNew:!slot,
     data:slot?slot.data:"",ora:slot?slot.ora:"",
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
-    tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"articolo_blog"):"post_ig"),
+    tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"post_ig"),
     tema:idea?idea.titolo:(slot&&slot.titolo?slot.titolo:""),
     titolo:slot?slot.titolo||"":"",
     caption_ig:slot?slot.caption_ig||"":"",
