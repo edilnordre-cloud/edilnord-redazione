@@ -475,8 +475,10 @@ function normSlot(r){r.stato=r.stato||"vuoto";return r;}
 function Shell(){
   const app=el("div",{class:"app"});
   const ideeNew=S.data.idee.filter(i=>i.stato==="nuova").length;
+  const bozzeCount=S.data.calendario.filter(s=>s.stato==="bozza"&&s.tipo!=="esterno").length;
   const navItems=[
-    ["calendario","🗓️","Calendario"],["idee","💡","Idee",ideeNew],
+    ["calendario","🗓️","Calendario"],["bozze","📝","Bozze",bozzeCount||null],
+    ["idee","💡","Idee",ideeNew],
     ["composer","✍️","Composer"],["batch","🗂️","Batch"],
     ["spesa","🛒","Lista spesa"],["impostazioni","⚙️","Impostazioni"]
   ];
@@ -507,6 +509,7 @@ function views(){
   if(S.loading)return el("div",{class:"loading"},el("span",{class:"sp"}),"Carico la redazione…");
   switch(S.view){
     case"calendario":return CalendarView();
+    case"bozze":return BozzeView();
     case"idee":return IdeeView();
     case"composer":return ComposerView();
     case"batch":return BatchView();
@@ -514,6 +517,47 @@ function views(){
     case"impostazioni":return SettingsView();
   }
 }
+
+/* ============================================================ BOZZE */
+function BozzeView(){
+  const bozze=S.data.calendario.filter(s=>s.stato==="bozza"&&s.tipo!=="esterno")
+    .sort((a,b)=>a.data>b.data?1:a.data<b.data?-1:0);
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},"Bozze"),
+      el("div",{class:"sub"},"Contenuti iniziati ma non ancora pronti. Riaprili nel Composer per completarli.")),
+    el("button",{class:"btn btn-p",onclick:()=>startComposer()},"＋ Nuovo contenuto")));
+  if(!bozze.length){
+    frag.append(el("div",{class:"empty-state",style:"text-align:center;padding:60px 20px;color:var(--muted)"},
+      el("div",{style:"font-size:48px;margin-bottom:16px"},"📝"),
+      el("div",{style:"font-size:18px;font-weight:600;color:var(--ink-2);margin-bottom:8px"},"Nessuna bozza"),
+      el("div",{},"Le bozze appaiono qui quando salvi un contenuto non ancora pronto.")));
+    return frag;
+  }
+  const PILL={territorio:"#9DC0AA",dati:"#5B7FA6",reale:"#C87F5A",reel:"#9DC0AA"};
+  const list=el("div",{style:"display:flex;flex-direction:column;gap:12px"});
+  bozze.forEach(s=>{
+    const accent=PILL[s.pilastro]||"#9DC0AA";
+    const card=el("div",{class:"card",style:"display:flex;align-items:center;gap:16px;padding:16px 20px"});
+    const dot=el("div",{style:`width:10px;height:10px;border-radius:50%;background:${accent};flex-shrink:0`});
+    const info=el("div",{style:"flex:1;min-width:0"});
+    const titolo=el("div",{style:"font-weight:700;font-size:15px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"},s.titolo||s.note||"(senza titolo)");
+    const meta=el("div",{style:"font-size:12px;color:var(--muted);margin-top:3px"},
+      (s.data?fmtDate(s.data)+" · ":"Senza data · ")+capitalize(s.pilastro)+" · "+tipoLabel(s.tipo));
+    info.append(titolo,meta);
+    const btnRiapri=el("button",{class:"btn btn-g btn-sm",onclick:()=>{
+      const slot=slotById(s.id);
+      if(slot)startComposer(slot);
+      else toast("Slot non trovato.","err");
+    }},"✎ Riapri");
+    card.append(dot,info,btnRiapri);
+    list.append(card);
+  });
+  frag.append(list);
+  return frag;
+}
+function capitalize(s){return s?s[0].toUpperCase()+s.slice(1):"";}
+function tipoLabel(t){const m={post_ig:"Post IG",articolo_blog:"Blog+Post",reel:"Reel",entrambi:"Blog+Post"};return m[t]||t||"";}
 
 /* ============================================================ CALENDARIO */
 function CalendarView(){
