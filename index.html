@@ -214,6 +214,14 @@ a{color:var(--sage-ink)}
 /* media briefs & thumbs */
 .brief-box{background:var(--sage-soft);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:18px;font-size:13.5px;color:var(--sage-ink)}
 .brief-box b{display:block;margin-bottom:3px;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.hook-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.hook-card{border:2px solid var(--line-2);border-radius:var(--radius);padding:22px 20px 18px;cursor:pointer;background:var(--surface);transition:border-color .15s,box-shadow .15s,background .15s}
+.hook-card:hover{border-color:var(--sage);box-shadow:var(--shadow-2)}
+.hook-card.on{border-color:var(--sage-ink);background:var(--sage-soft);box-shadow:var(--shadow-2)}
+.hook-tipo-badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px}
+.hook-card.on .hook-tipo-badge{color:var(--sage-ink)}
+.hook-preview{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;line-height:1.05;color:var(--ink);margin-bottom:12px;letter-spacing:.01em}
+.hook-chars{font-size:11px;color:var(--muted);font-weight:600}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:12px}
 .thumb{position:relative;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--line-2);background:var(--surface-2)}
 .thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
@@ -377,7 +385,7 @@ const S = {
 
 /* ---------- utils ---------- */
 const $=(s,r=document)=>r.querySelector(s);
-const el=(t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==="class")e.className=a[k];else if(k==="html")e.innerHTML=a[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),a[k]);else if(a[k]!=null)e.setAttribute(k,a[k]);}for(const x of c.flat()){if(x==null||x===false)continue;e.append(x.nodeType?x:document.createTextNode(x));}return e;};
+const el=(t,a={},...c)=>{const e=document.createElement(t);for(const k in a){if(k==="class")e.className=a[k];else if(k==="html")e.innerHTML=a[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),a[k]);else if(typeof a[k]==="boolean")e[k]=a[k];else if(a[k]!=null)e.setAttribute(k,a[k]);}for(const x of c.flat()){if(x==null||x===false)continue;e.append(x.nodeType?x:document.createTextNode(x));}return e;};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 const uid=p=>p+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,6);
 function toast(msg,type="",ms=3800){const t=el("div",{class:"toast "+type},el("span",{class:"tt"},msg));$("#toasts").append(t);setTimeout(()=>{t.style.transition="opacity .3s,transform .3s";t.style.opacity="0";t.style.transform="translateX(20px)";setTimeout(()=>t.remove(),320);},ms);}
@@ -735,7 +743,7 @@ async function pollIdee(times){
 }
 
 /* ============================================================ COMPOSER */
-const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
+const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
 function startComposer(slot,extra={}){
   const idea=extra.idea;
   S.composer={
@@ -758,6 +766,7 @@ function startComposer(slot,extra={}){
     id_intervista:slot?slot.id_intervista||"":"",
     intervista:null,       // {domande:[],risposte:[]}
     step:"idea",
+    hooks:[],hookScelto:null,
     dirty:false, generating:false, uploading:false, cta_applicata:false
   };
   S.view="composer";render();
@@ -797,9 +806,10 @@ function stepGuards(){
   const hasIntervista=c.intervista&&c.intervista.risposte&&c.intervista.risposte.some(r=>String(r||"").trim());
   const hasFoto=c.tipo==="reel"?(c.url_video||c.foto.length>=3):c.foto.length>0;
   const hasTesto=!!(c.caption_ig&&(c.tipo!=="articolo_blog"||c.testo_blog));
-  const done=[];if(c.tema)done.push("idea");if(hasIntervista)done.push("intervista");if(hasTesto)done.push("testo");if(hasFoto)done.push("foto");
-  const reach=["idea"];if(c.tema)reach.push("intervista");if(hasIntervista)reach.push("testo");if(hasTesto)reach.push("foto","anteprima","programma");
-  return {done,reach,hasIntervista,hasFoto,hasTesto};
+  const hasHook=!!(c.hookScelto&&c.hookScelto.testo);
+  const done=[];if(c.tema)done.push("idea");if(hasIntervista)done.push("intervista");if(hasTesto)done.push("testo");if(hasHook)done.push("hook");if(hasFoto)done.push("foto");
+  const reach=["idea"];if(c.tema)reach.push("intervista");if(hasIntervista)reach.push("testo");if(hasTesto)reach.push("hook");if(hasHook)reach.push("foto","anteprima","programma");
+  return {done,reach,hasIntervista,hasFoto,hasTesto,hasHook};
 }
 function gotoNextStep(){const i=STEPS.findIndex(s=>s[0]===S.composer.step);if(i<STEPS.length-1){const g=stepGuards();const next=STEPS[i+1][0];if(g.reach.includes(next)){S.composer.step=next;render();}else toast("Completa prima questo step.","warn");}}
 
@@ -808,11 +818,11 @@ function stepPanel(){
   const panel=el("div",{class:"panel"});
   if(c.step==="idea"){
     panel.append(el("h2",{},"Di cosa parliamo"),el("p",{class:"pd"},"Un tema locale e concreto. Niente macroeconomia o mercato nazionale."));
-    panel.append(field("Tema / argomento",textarea(c.tema,v=>{c.tema=v;c.dirty=true;},"Es. Quanto vale un trilocale in Via Increa e perché la zona sta cambiando")));
+    const btnNextIdea=el("button",{class:"btn btn-p",disabled:!c.tema.trim(),onclick:()=>{c.step="intervista";render();}},"Prepara l'intervista →");
+    panel.append(field("Tema / argomento",textarea(c.tema,v=>{c.tema=v;c.dirty=true;btnNextIdea.disabled=!v.trim();},"Es. Quanto vale un trilocale in Via Increa e perché la zona sta cambiando")));
     panel.append(el("div",{class:"hrow"},
       pilPicker(),tipoPicker()));
-    panel.append(el("div",{class:"cbar"},el("span",{}),
-      el("button",{class:"btn btn-p",disabled:!c.tema.trim(),onclick:()=>{c.step="intervista";render();}},"Prepara l'intervista →")));
+    panel.append(el("div",{class:"cbar"},el("span",{}),btnNextIdea));
   }
   else if(c.step==="intervista"){
     panel.append(el("h2",{},"Intervista a Matteo"),el("p",{class:"pd"},"Le tue risposte sono la tesi del contenuto. Rispondi anche solo a voce sintetica: l'AI scrive partendo da qui."));
@@ -859,8 +869,42 @@ function stepPanel(){
       panel.append(regen);
       panel.append(el("div",{class:"cbar"},
         el("button",{class:"btn btn-g",onclick:()=>{c.step="intervista";render();}},"← Indietro"),
-        el("button",{class:"btn btn-p",onclick:()=>{c.step="foto";render();}},"Aggiungi i media →")));
+        el("button",{class:"btn btn-p",onclick:()=>{c.step="hook";render();}},"Scegli l'hook →")));
     }
+  }
+  else if(c.step==="hook"){
+    panel.append(el("h2",{},"Hook del carosello"),el("p",{class:"pd"},"La prima frase che appare sulla copertina. Max 7 parole, tutto maiuscolo, elemento concreto obbligatorio."));
+    if(c.generating){
+      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Genero le varianti hook…"));
+    } else if(!c.hooks||!c.hooks.length){
+      panel.append(el("button",{class:"btn btn-p",onclick:genHooks},"✨ Genera 4 varianti hook"));
+    } else {
+      const TIPO_LABEL={numero_dato:"Numero / dato",domanda:"Domanda",contrasto:"Contrasto",curiosita:"Curiosità"};
+      const grid=el("div",{class:"hook-grid"});
+      c.hooks.forEach(h=>{
+        const sel=c.hookScelto&&c.hookScelto.testo===h.testo;
+        const card=el("div",{class:"hook-card"+(sel?" on":""),onclick:()=>{c.hookScelto=h;c.dirty=true;render();}});
+        const hookLen=h.testo.length;
+        let hookFont=48;
+        if(hookLen>20)hookFont=40;
+        if(hookLen>28)hookFont=34;
+        if(hookLen>36)hookFont=28;
+        if(hookLen>46)hookFont=24;
+        card.append(
+          el("div",{class:"hook-tipo-badge"},TIPO_LABEL[h.tipo]||h.tipo),
+          el("div",{class:"hook-preview",style:`font-size:${hookFont}px`},h.testo),
+          el("div",{class:"hook-chars"},h.testo.split(" ").length+" parole")
+        );
+        grid.append(card);
+      });
+      panel.append(grid);
+      panel.append(el("button",{class:"btn btn-g btn-sm",style:"margin-top:12px",onclick:genHooks},"↻ Rigenera"));
+      if(c.hookScelto)panel.append(el("div",{class:"brief-box"},el("b",{},"Hook selezionato: "),c.hookScelto.testo));
+    }
+    panel.append(el("div",{class:"cbar"},
+      el("button",{class:"btn btn-g",onclick:()=>{c.step="testo";render();}},"← Indietro"),
+      el("button",{class:"btn btn-p",disabled:!g.hasHook,onclick:()=>{c.step="foto";render();}},"Aggiungi i media →")));
+    if(!g.hasHook&&c.hooks&&c.hooks.length)panel.append(el("div",{class:"gate-warn"},"🎯","Seleziona un hook per procedere."));
   }
   else if(c.step==="foto"){
     panel.append(el("h2",{},"Media reali"),el("p",{class:"pd"},"Vincolo: niente stato \"pronto\" senza almeno una foto reale. Le foto costruiscono la riconoscibilità Edilnord."));
@@ -871,7 +915,7 @@ function stepPanel(){
     if(c.tipo==="reel"&&c.reelMode==="mp4")panel.append(mediaUploader("mp4"));
     if(c.tipo==="reel"&&(c.reelMode==="foto"||c.reelMode==="clip"))panel.append(overlayEditor());
     panel.append(el("div",{class:"cbar"},
-      el("button",{class:"btn btn-g",onclick:()=>{c.step="testo";render();}},"← Indietro"),
+      el("button",{class:"btn btn-g",onclick:()=>{c.step="hook";render();}},"← Indietro"),
       el("button",{class:"btn btn-p",disabled:!g.hasFoto,onclick:()=>{c.step="anteprima";render();}},"Vedi l'anteprima →")));
     if(!g.hasFoto)panel.append(el("div",{class:"gate-warn"},"📷",c.tipo==="reel"?"Servono un mp4 pronto oppure ≥3 foto/clip per montare il Reel.":"Carica almeno 1 foto reale per procedere."));
   }
@@ -985,6 +1029,17 @@ async function saveIntervistaNext(){
   if(!c.id_intervista)c.id_intervista=uid("int");
   try{await api("redazione-salva-intervista",{intervista:{id:c.id_intervista,id_contenuto:c.id,tema:c.tema,domande:c.intervista.domande,risposte:c.intervista.risposte,tipo:c.tipo}});}catch(e){}
   c.step="testo";render();
+}
+async function genHooks(){
+  const c=S.composer;
+  if(!c.tema.trim()){toast("Scrivi prima il tema nel primo step.","warn");return;}
+  c.generating=true;render();
+  try{
+    const r=await api("redazione-genera-hook",{tema:c.tema,pilastro:c.pilastro,caption_preview:c.caption_ig||""});
+    if(!r.ok||!r.hooks){toast(r.errore||"Generazione hook fallita.","err");}
+    else{c.hooks=r.hooks;c.hookScelto=null;c.dirty=true;toast("4 varianti generate.","ok");}
+  }catch(e){toast("Errore: "+e.message,"err");}
+  c.generating=false;render();
 }
 async function genTesto(indicazione){
   const c=S.composer;c.generating=true;render();
