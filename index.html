@@ -168,6 +168,12 @@ a{color:var(--sage-ink)}
 .idea .brief{font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:8px 10px}
 .idea .ia{display:flex;gap:8px;margin-top:auto;padding-top:4px}
 .idea .ia .btn{flex:1}
+.idea .score{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;background:var(--ok-soft);color:var(--ok);margin-left:auto}
+.idea .score.mid{background:var(--warn-soft);color:var(--warn)}
+.idea .reader-q{font-size:13px;font-style:italic;color:var(--ink-2);border-left:3px solid var(--sage);padding-left:9px}
+.idea details.domande{font-size:12px;color:var(--ink-2)}
+.idea details.domande summary{cursor:pointer;color:var(--muted);user-select:none;list-style:none;padding:2px 0}
+.idea details.domande ol{margin:6px 0 0 16px;display:flex;flex-direction:column;gap:3px}
 
 /* ---------- Composer ---------- */
 .composer{display:grid;grid-template-columns:1fr;gap:0}
@@ -620,12 +626,21 @@ function IdeeView(){
   const grid=el("div",{class:"idea-grid"});
   nuove.forEach(i=>{
     const p=PILLARS[i.pilastro]||PILLARS.territorio;
+    const score=parseInt(i.punteggio)||0;
+    const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
     grid.append(el("div",{class:"idea"},
       el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
-        i.formato?el("span",{class:"chip p-esterno"},i.formato):null),
+        i.formato?el("span",{class:"chip p-esterno"},i.formato):null,
+        score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
       el("h3",{},i.titolo),
-      i.angolo_locale?el("div",{class:"angle"},"📍 "+i.angolo_locale):null,
+      i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
+      (i.angolo_locale||i.luogo)?el("div",{class:"angle"},"📍 "+(i.angolo_locale||i.luogo)):null,
       i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
+      i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
+      domande.length?el("details",{class:"domande"},
+        el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
+        el("ol",{},...domande.map(d=>el("li",{},d)))
+      ):null,
       el("div",{class:"ia"},
         el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"✓ Sviluppa"),
         el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
