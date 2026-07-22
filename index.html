@@ -550,7 +550,8 @@ function BozzeView(){
       if(slot)startComposer(slot);
       else toast("Slot non trovato.","err");
     }},"✎ Riapri");
-    card.append(dot,info,btnRiapri);
+    const btnElimina=el("button",{class:"btn btn-g btn-sm",style:"color:var(--err,#c0392b)",onclick:()=>eliminaBozza(s.id)},"✕ Elimina");
+    card.append(dot,info,btnRiapri,btnElimina);
     list.append(card);
   });
   frag.append(list);
@@ -788,9 +789,14 @@ async function pollIdee(times){
 
 /* ============================================================ COMPOSER */
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
+function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto}));}catch(e){}}
+async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
+async function eliminaBozza(id){if(!confirm("Eliminare questa bozza?"))return;const slot=slotById(id);if(!slot)return;const row={...slot,stato:"eliminata"};try{await api("redazione-salva-contenuto",{contenuto:row});const idx=S.data.calendario.findIndex(x=>x.id===id);if(idx>=0)S.data.calendario.splice(idx,1);try{localStorage.removeItem('rdz_int_'+id);localStorage.removeItem('rdz_step_'+id);}catch(e){}render();toast("Bozza eliminata.","ok");}catch(e){toast("Errore eliminazione.","err");}}
 function startComposer(slot,extra={}){
   const idea=extra.idea;
   const _savedInt=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_int_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
+  const _savedStep=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_step_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
+  const _defaultStep=slot?(slot.caption_ig?"testo":((_savedInt||slot.id_intervista)?"intervista":"idea")):"idea";
   S.composer={
     id:slot?slot.id:uid("ig"),
     isNew:!slot,
@@ -810,8 +816,8 @@ function startComposer(slot,extra={}){
     richiedi_ok:slot?String(slot.richiedi_ok_esplicito).toLowerCase()==="true":false,
     id_intervista:slot?slot.id_intervista||"":"",
     intervista:_savedInt,
-    step:slot?(slot.caption_ig?"testo":((_savedInt||slot.id_intervista)?"intervista":"idea")):"idea",
-    hooks:[],hookScelto:null,
+    step:_savedStep?_savedStep.step:_defaultStep,
+    hooks:[],hookScelto:_savedStep?_savedStep.hookScelto:null,
     dirty:false, generating:false, uploading:false,
     cta_applicata:slot?slot.cta==="valutatore":false
   };
@@ -910,7 +916,7 @@ function stepPanel(){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
     }else{
       panel.append(field("Titolo",input(c.titolo,v=>{c.titolo=v;c.dirty=true;updatePreview();})));
-      if(c.tipo==="articolo_blog")
+      if(c.tipo==="articolo_blog"||c.tipo==="entrambi")
         panel.append(field("Articolo blog (HTML)",textarea(c.testo_blog,v=>{c.testo_blog=v;c.dirty=true;updatePreview();},"",true)));
       panel.append(field("Caption Instagram",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();},"",false),
         "La prima riga deve avere un numero, un luogo o una domanda. Hashtag già in coda."));
@@ -921,8 +927,8 @@ function stepPanel(){
           el("button",{class:"btn btn-g",onclick:()=>genTesto(c._ind)},"↻ Rigenera")));
       panel.append(regen);
       panel.append(el("div",{class:"cbar"},
-        el("button",{class:"btn btn-g",onclick:()=>{c.step="intervista";render();}},"← Indietro"),
-        el("button",{class:"btn btn-p",onclick:()=>{c.step="hook";render();}},"Scegli l'hook →")));
+        el("button",{class:"btn btn-g",onclick:()=>{c.step="intervista";saveStepLocal();render();}},"← Indietro"),
+        el("button",{class:"btn btn-p",onclick:()=>{c.step="hook";saveStepLocal();render();}},"Scegli l'hook →")));
     }
   }
   else if(c.step==="hook"){
@@ -937,7 +943,7 @@ function stepPanel(){
       const grid=el("div",{class:"hook-grid"});
       c.hooks.forEach(h=>{
         const sel=c.hookScelto&&c.hookScelto.testo===h.testo;
-        const card=el("div",{class:"hook-card"+(sel?" on":""),onclick:()=>{c.hookScelto=h;c.dirty=true;render();}});
+        const card=el("div",{class:"hook-card"+(sel?" on":""),onclick:()=>{c.hookScelto=h;c.dirty=true;saveStepLocal();render();}});
         const hookLen=h.testo.length;
         let hookFont=48;
         if(hookLen>20)hookFont=40;
@@ -1083,7 +1089,7 @@ async function saveIntervistaNext(){
   const c=S.composer;
   if(!c.id_intervista)c.id_intervista=uid("int");
   try{await api("redazione-salva-intervista",{intervista:{id:c.id_intervista,id_contenuto:c.id,tema:c.tema,domande:c.intervista.domande,risposte:c.intervista.risposte,tipo:c.tipo}});}catch(e){}
-  c.step="testo";render();
+  c.step="testo";saveStepLocal();silentSaveDraft();render();
 }
 async function genHooks(){
   const c=S.composer;
