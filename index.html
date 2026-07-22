@@ -145,6 +145,7 @@ a{color:var(--sage-ink)}
 .slot.pl-reale .sbar{background:var(--reale)}
 .slot.pl-reel .sbar{background:var(--reel)}
 .slot.pl-esterno{border-style:dashed;opacity:.72}
+.slot.st-pronto,.slot.st-approvato,.slot.st-ok_confermato{background:color-mix(in srgb,var(--ok) 10%,var(--surface));border-color:color-mix(in srgb,var(--ok) 35%,var(--line))}
 .slot{padding-left:13px}
 .slot[draggable=true]{cursor:grab}
 .slot.dragging{opacity:.4}
@@ -624,7 +625,7 @@ function calMonth(){
 }
 function slotChip(s){
   const p=PILLARS[s.pilastro]||PILLARS.esterno;
-  const c=el("div",{class:`slot pl-${s.pilastro} st-wrap`,title:(s.titolo||p.label)});
+  const c=el("div",{class:`slot pl-${s.pilastro} st-${s.stato} st-wrap`,title:(s.titolo||p.label)});
   if(s.tipo!=="esterno"&&s.stato!=="pubblicato"){
     c.draggable=true;
     c.addEventListener("dragstart",()=>{S._drag=s.id;c.classList.add("dragging");});
@@ -741,10 +742,11 @@ function IdeeView(){
 async function accettaIdea(i){
   const tipo=i.pilastro==="reel"?"reel":"entrambi";
   const slot=findFreeSlot(i.pilastro,tipo);
+  const autoData=slot?slot.data:nextDateForPillar(i.pilastro);
   i.stato="accettata";
   try{await api("redazione-salva-idea",{idea:i});}catch(e){}
-  startComposer(slot,{idea:i});
-  toast(slot?("Bozza creata nello slot del "+fmtDate(slot.data)):"Idea aperta nel Composer.","ok");
+  startComposer(slot,{idea:i,autoData});
+  toast(autoData?("Programmato per "+fmtDate(autoData)+" — puoi cambiarlo nell'ultimo step."):"Idea aperta nel Composer.","ok",5000);
 }
 function scartaIdea(i){
   modalConfirm("Scartare questa idea?",i.titolo,"Scarta",async()=>{
@@ -758,6 +760,23 @@ function findFreeSlot(pilastro,tipo){
   const cands=visibleSlots().filter(s=>s.stato==="vuoto"&&s.data>=today&&(s.pilastro===pilastro||(tipo==="reel"&&s.pilastro==="reel")))
     .sort((a,b)=>(a.data).localeCompare(b.data));
   return cands[0]||null;
+}
+function nextDateForPillar(pilastro){
+  // preferred day-of-week per pillar (JS: 0=Dom,1=Lun,...,6=Sab)
+  // override via Config key SCHEDULE_DOW_TERRITORIO etc.
+  const defaults={territorio:2,dati:4,reale:3,reel:6};
+  const cfg=S.data.config||{};
+  const targetDow=parseInt(cfg['SCHEDULE_DOW_'+pilastro.toUpperCase()])||defaults[pilastro]||3;
+  const taken=new Set(S.data.calendario.filter(s=>s.pilastro===pilastro&&!['vuoto','eliminata','scartata'].includes(s.stato)).map(s=>s.data));
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);// start from tomorrow
+  for(let tries=0;tries<52;tries++){
+    if(d.getDay()===targetDow){
+      const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(!taken.has(ds))return ds;
+    }
+    d.setDate(d.getDate()+1);
+  }
+  return "";
 }
 function openGeneraIdee(){
   let n=8,pil="";
@@ -805,7 +824,7 @@ function startComposer(slot,extra={}){
   S.composer={
     id:slot?slot.id:uid("ig"),
     isNew:!slot,
-    data:slot?slot.data:"",ora:slot?slot.ora:"",
+    data:slot?slot.data:(extra.autoData||""),ora:slot?slot.ora:"",
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
     tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"post_ig"),
     tema:idea?idea.titolo:(slot&&slot.tema?slot.tema:slot&&slot.titolo?slot.titolo:""),
@@ -1008,7 +1027,24 @@ function stepPanel(){
     if(!g.hasFoto)panel.append(el("div",{class:"gate-warn"},"📷",c.tipo==="reel"?"Servono un mp4 pronto oppure ≥3 foto/clip per montare il Reel.":"Carica almeno 1 foto reale per procedere."));
   }
   else if(c.step==="anteprima"){
-    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Così apparirà. Puoi ancora correggere testo e caption qui sotto."));
+    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Così apparirà su Instagram. Puoi ancora correggere testo e caption."));
+    // Carousel
+    if(c.foto.length){
+      const idx=c._carIdx||0;const tot=c.foto.length;
+      const cw=el("div",{style:"background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px;position:relative;max-width:400px"});
+      const img=el("img",{src:c.foto[idx],style:"width:100%;aspect-ratio:1/1;object-fit:cover;display:block"});
+      cw.append(img);
+      if(tot>1){
+        const counter=el("div",{style:"position:absolute;top:8px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px"},`${idx+1}/${tot}`);
+        const dots=el("div",{style:"position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px"});
+        for(let i=0;i<tot;i++)dots.append(el("span",{style:`width:5px;height:5px;border-radius:50%;background:${i===idx?"#fff":"rgba(255,255,255,.45)"}`}));
+        if(idx>0){const b=el("button",{style:"position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center",onclick:()=>{c._carIdx=idx-1;render();}},"‹");cw.append(b);}
+        if(idx<tot-1){const b=el("button",{style:"position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center",onclick:()=>{c._carIdx=idx+1;render();}},"›");cw.append(b);}
+        cw.append(counter,dots);
+      }
+      panel.append(cw);
+      if(tot>1)panel.append(el("div",{class:"hint",style:"margin-bottom:10px"},`Carosello: ${tot} immagini. Usa le frecce per sfogliare.`));
+    }
     panel.append(field("Titolo",input(c.titolo,v=>{c.titolo=v;c.dirty=true;updatePreview();})));
     panel.append(field("Caption",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();})));
     panel.append(el("div",{class:"cbar"},
