@@ -789,14 +789,19 @@ async function pollIdee(times){
 
 /* ============================================================ COMPOSER */
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
-function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto}));}catch(e){}}
+function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||""}));}catch(e){}}
 async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
 async function eliminaBozza(id){if(!confirm("Eliminare questa bozza?"))return;const slot=slotById(id);if(!slot)return;const row={...slot,stato:"eliminata"};try{await api("redazione-salva-contenuto",{contenuto:row});const idx=S.data.calendario.findIndex(x=>x.id===id);if(idx>=0)S.data.calendario.splice(idx,1);try{localStorage.removeItem('rdz_int_'+id);localStorage.removeItem('rdz_step_'+id);}catch(e){}render();toast("Bozza eliminata.","ok");}catch(e){toast("Errore eliminazione.","err");}}
 function startComposer(slot,extra={}){
   const idea=extra.idea;
   const _savedInt=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_int_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
   const _savedStep=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_step_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
-  const _defaultStep=slot?(slot.caption_ig?"testo":((_savedInt||slot.id_intervista)?"intervista":"idea")):"idea";
+  const _savedCaption=_savedStep?(_savedStep.caption_ig||""):"";
+  const _savedBlog=_savedStep?(_savedStep.testo_blog||""):"";
+  const _savedTitolo=_savedStep?(_savedStep.titolo||""):"";
+  const _caption=slot?(slot.caption_ig||_savedCaption):_savedCaption;
+  const _blog=slot?(slot.testo_blog||_savedBlog):_savedBlog;
+  const _defaultStep=slot?(_caption?"testo":((_savedInt||slot.id_intervista)?"intervista":"idea")):"idea";
   S.composer={
     id:slot?slot.id:uid("ig"),
     isNew:!slot,
@@ -804,9 +809,9 @@ function startComposer(slot,extra={}){
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
     tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"post_ig"),
     tema:idea?idea.titolo:(slot&&slot.tema?slot.tema:slot&&slot.titolo?slot.titolo:""),
-    titolo:slot?slot.titolo||"":"",
-    caption_ig:slot?slot.caption_ig||"":"",
-    testo_blog:slot?slot.testo_blog||"":"",
+    titolo:slot?(slot.titolo||_savedTitolo||""):"",
+    caption_ig:_caption,
+    testo_blog:_blog,
     brief_foto:idea?idea.brief_foto:(slot?slot.note:"")||"",
     foto:(slot&&slot.url_foto?slot.url_foto.split(",").filter(Boolean):[]),
     url_video:slot?slot.url_video||"":"",
@@ -916,8 +921,23 @@ function stepPanel(){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
     }else{
       panel.append(field("Titolo",input(c.titolo,v=>{c.titolo=v;c.dirty=true;updatePreview();})));
-      if(c.tipo==="articolo_blog"||c.tipo==="entrambi")
-        panel.append(field("Articolo blog (HTML)",textarea(c.testo_blog,v=>{c.testo_blog=v;c.dirty=true;updatePreview();},"",true)));
+      if(c.tipo==="articolo_blog"||c.tipo==="entrambi"){
+        const blogWrap=el("div",{class:"field"});
+        const blogLabel=el("div",{class:"field-header",style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"},
+          el("label",{},"Articolo blog"),
+          el("button",{class:"btn btn-g btn-sm",onclick:()=>{c._blogEditMode=!c._blogEditMode;render();}}
+            ,c._blogEditMode?"👁 Vedi preview":"✏️ Modifica HTML"));
+        blogWrap.append(blogLabel);
+        if(c._blogEditMode){
+          const ta=textarea(c.testo_blog,v=>{c.testo_blog=v;c.dirty=true;updatePreview();},"",true);
+          blogWrap.append(ta);
+        }else{
+          const prev=el("div",{class:"blog-preview",style:"border:1px solid var(--border);border-radius:8px;padding:16px;min-height:80px;font-size:14px;line-height:1.6;overflow:auto"});
+          prev.innerHTML=c.testo_blog||"<em style='color:var(--muted)'>Nessun testo ancora generato</em>";
+          blogWrap.append(prev);
+        }
+        panel.append(blogWrap);
+      }
       panel.append(field("Caption Instagram",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();},"",false),
         "La prima riga deve avere un numero, un luogo o una domanda. Hashtag già in coda."));
       if(c.cta_applicata)panel.append(el("div",{class:"brief-box"},el("b",{},"CTA valutatore inserita"),"Questo è 1 contenuto su 3: chiude con l'invito soft al valutatore."));
@@ -1112,7 +1132,7 @@ async function genTesto(indicazione){
       if(r.overlay&&r.overlay.length)c.overlay=r.overlay;
       if(r.brief_foto)c.brief_foto=r.brief_foto;
       c.cta_applicata=!!r.cta_applicata;c.dirty=true;toast("Contenuto generato.","ok");
-      saveDraft();}
+      saveStepLocal();saveDraft();}
   }catch(e){toast("Errore: "+e.message,"err");}
   c.generating=false;render();
 }
