@@ -790,6 +790,7 @@ async function pollIdee(times){
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
 function startComposer(slot,extra={}){
   const idea=extra.idea;
+  const _savedInt=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_int_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
   S.composer={
     id:slot?slot.id:uid("ig"),
     isNew:!slot,
@@ -808,8 +809,8 @@ function startComposer(slot,extra={}){
     geotag:slot?slot.geotag||"Brugherio":"Brugherio",
     richiedi_ok:slot?String(slot.richiedi_ok_esplicito).toLowerCase()==="true":false,
     id_intervista:slot?slot.id_intervista||"":"",
-    intervista:null,
-    step:slot?(slot.caption_ig?"testo":slot.id_intervista?"intervista":"idea"):"idea",
+    intervista:_savedInt,
+    step:slot?(slot.caption_ig?"testo":((_savedInt||slot.id_intervista)?"intervista":"idea")):"idea",
     hooks:[],hookScelto:null,
     dirty:false, generating:false, uploading:false,
     cta_applicata:slot?slot.cta==="valutatore":false
@@ -879,11 +880,11 @@ function stepPanel(){
         const card=el("div",{class:"qcard"},el("div",{class:"qtag"},d.tipo==="rapida"?"Risposta rapida":"Risposta aperta"),el("div",{class:"qq"},d.testo));
         if(d.tipo==="rapida"&&d.opzioni){
           const opts=el("div",{class:"qopts"});
-          d.opzioni.forEach(o=>opts.append(el("button",{class:"qopt"+(c.intervista.risposte[qi]===o?" on":""),onclick:()=>{c.intervista.risposte[qi]=o;c.dirty=true;render();}},o)));
+          d.opzioni.forEach(o=>opts.append(el("button",{class:"qopt"+(c.intervista.risposte[qi]===o?" on":""),onclick:()=>{c.intervista.risposte[qi]=o;c.dirty=true;saveIntervistaLocal();render();}},o)));
           card.append(opts);
-          card.append(textarea(c.intervista.risposte[qi]&&!d.opzioni.includes(c.intervista.risposte[qi])?c.intervista.risposte[qi]:"",v=>{c.intervista.risposte[qi]=v;c.dirty=true;},"…oppure aggiungi con parole tue"));
+          card.append(textarea(c.intervista.risposte[qi]&&!d.opzioni.includes(c.intervista.risposte[qi])?c.intervista.risposte[qi]:"",v=>{c.intervista.risposte[qi]=v;c.dirty=true;saveIntervistaLocal();},"…oppure aggiungi con parole tue"));
         }else{
-          card.append(textarea(c.intervista.risposte[qi]||"",v=>{c.intervista.risposte[qi]=v;c.dirty=true;},"La tua risposta — un caso reale, un numero visto sul campo…"));
+          card.append(textarea(c.intervista.risposte[qi]||"",v=>{c.intervista.risposte[qi]=v;c.dirty=true;saveIntervistaLocal();},"La tua risposta — un caso reale, un numero visto sul campo…"));
         }
         panel.append(card);
       });
@@ -1063,12 +1064,13 @@ function field(label,control,hint){return el("div",{class:"field"},el("label",{}
 function input(val,on,ph="",type="text"){const i=el("input",{class:"inp",type,value:val||"",placeholder:ph});i.addEventListener("input",e=>on(e.target.value));return i;}
 function textarea(val,on,ph="",big=false){const t=el("textarea",{class:"ta"+(big?" big":""),placeholder:ph});t.value=val||"";t.addEventListener("input",e=>on(e.target.value));return t;}
 
+function saveIntervistaLocal(){const c=S.composer;if(c&&c.intervista)try{localStorage.setItem('rdz_int_'+c.id,JSON.stringify(c.intervista));}catch(e){}}
 async function genIntervista(){
   const c=S.composer;if(!c.tema.trim()){toast("Scrivi prima il tema.","warn");return;}
   c.generating=true;render();
   try{const r=await api("redazione-intervista",{tema:c.tema,pilastro:c.pilastro,tipo:c.tipo});
     if(!r.ok){toast(r.errore||"Riprova.","err");}
-    else{c.intervista={domande:r.domande,risposte:new Array(r.domande.length).fill("")};}
+    else{c.intervista={domande:r.domande,risposte:new Array(r.domande.length).fill("")};saveIntervistaLocal();}
   }catch(e){toast("Errore: "+e.message,"err");}
   c.generating=false;render();
 }
@@ -1184,6 +1186,7 @@ async function setPronto(){
     toast("In vacanza questo contenuto (OK esplicito) resterà in attesa e non uscirà.","warn",6000);
   const row=composerToRow("pronto");
   try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;
+    try{localStorage.removeItem('rdz_int_'+c.id);}catch(e){}
     toast("Contenuto pronto per la pubblicazione.","ok");nav("calendario");}
   catch(e){toast("Errore: "+e.message,"err");}
 }
