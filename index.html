@@ -987,8 +987,16 @@ function stepPanel(){
     if(!g.hasHook&&c.hooks&&c.hooks.length)panel.append(el("div",{class:"gate-warn"},"🎯","Seleziona un hook per procedere."));
   }
   else if(c.step==="foto"){
-    panel.append(el("h2",{},"Media reali"),el("p",{class:"pd"},"Vincolo: niente stato \"pronto\" senza almeno una foto reale. Le foto costruiscono la riconoscibilità Edilnord."));
-    if(c.brief_foto)panel.append(el("div",{class:"brief-box"},el("b",{},"Brief dall'AI"),c.brief_foto));
+    panel.append(el("h2",{},"Media reali"),el("p",{class:"pd"},"Basta 1 foto per procedere. Se ne carichi più di una diventa un carosello Instagram."));
+    if(c.brief_foto){
+      const brief=el("div",{class:"brief-box"});
+      brief.append(el("b",{},"Idee foto dall'AI (scegli quelle che hai)"));
+      const lines=c.brief_foto.split(/\n/).map(l=>l.trim()).filter(Boolean);
+      const ul=el("ul",{style:"margin:6px 0 0 16px;padding:0"});
+      lines.forEach(l=>{const li=el("li",{style:"margin-bottom:4px"});li.textContent=l.replace(/^\d+\)\s*/,"");ul.append(li);});
+      brief.append(ul);
+      panel.append(brief);
+    }
     if(c.tipo==="reel")panel.append(reelModes());
     if(c.tipo!=="reel"||c.reelMode==="foto")panel.append(mediaUploader("image"));
     if(c.tipo==="reel"&&c.reelMode==="clip")panel.append(mediaUploader("video-clips"));
