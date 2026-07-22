@@ -899,8 +899,13 @@ function stepPanel(){
     panel.append(el("h2",{},"Testo & caption"),el("p",{class:"pd"},"Generato dalle tue risposte. Modifica liberamente inline."));
     if(!c.caption_ig&&!c.generating){
       if(!c._autoGenTesto){c._autoGenTesto=true;setTimeout(()=>genTesto(),50);}
-      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo il testo…"),
-        el("p",{class:"pd",style:"color:var(--muted);font-size:13px;margin-top:12px"},(c.tipo==="entrambi"||c.tipo==="articolo_blog")?"Articolo + caption: circa 60-90 secondi, non chiudere la pagina.":"Solitamente 10-20 secondi…"));
+      if(!c._genFailed){
+        panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo il testo…"),
+          el("p",{class:"pd",style:"color:var(--muted);font-size:13px;margin-top:12px"},(c.tipo==="entrambi"||c.tipo==="articolo_blog")?"Articolo + caption: circa 60-90 secondi, non chiudere la pagina.":"Solitamente 10-20 secondi…"));
+      }else{
+        panel.append(el("p",{class:"pd",style:"color:var(--muted)"},"Generazione non riuscita."),
+          el("button",{class:"btn btn-p",onclick:()=>{c._genFailed=false;c._autoGenTesto=false;render();}},"↻ Riprova"));
+      }
     }else if(c.generating){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
     }else{
@@ -1096,8 +1101,8 @@ async function genTesto(indicazione){
   try{
     const r=await api("redazione-genera",{id:c.id,tema:c.tema,pilastro:c.pilastro,tipo:c.tipo,
       intervista:{domande:c.intervista.domande,risposte:c.intervista.risposte},indicazione:indicazione||""});
-    if(!r.ok){toast(r.errore||"Generazione fallita.","err");}
-    else{c.titolo=r.titolo||c.titolo;c.caption_ig=r.caption||"";c.testo_blog=r.articolo_html||"";
+    if(!r.ok){c._genFailed=true;toast(r.errore||"Generazione fallita.","err");}
+    else{c._genFailed=false;c.titolo=r.titolo||c.titolo;c.caption_ig=r.caption||"";c.testo_blog=r.articolo_html||"";
       if(r.overlay&&r.overlay.length)c.overlay=r.overlay;
       if(r.brief_foto)c.brief_foto=r.brief_foto;
       c.cta_applicata=!!r.cta_applicata;c.dirty=true;toast("Contenuto generato.","ok");
