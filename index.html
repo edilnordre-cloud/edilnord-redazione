@@ -898,7 +898,8 @@ function stepPanel(){
     panel.append(el("h2",{},"Testo & caption"),el("p",{class:"pd"},"Generato dalle tue risposte. Modifica liberamente inline."));
     if(!c.caption_ig&&!c.generating){
       if(!c._autoGenTesto){c._autoGenTesto=true;setTimeout(()=>genTesto(),50);}
-      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo il testo…"));
+      panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo il testo…"),
+        el("p",{class:"pd",style:"color:var(--muted);font-size:13px;margin-top:12px"},(c.tipo==="entrambi"||c.tipo==="articolo_blog")?"Articolo + caption: circa 60-90 secondi, non chiudere la pagina.":"Solitamente 10-20 secondi…"));
     }else if(c.generating){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
     }else{
@@ -1097,7 +1098,8 @@ async function genTesto(indicazione){
     else{c.titolo=r.titolo||c.titolo;c.caption_ig=r.caption||"";c.testo_blog=r.articolo_html||"";
       if(r.overlay&&r.overlay.length)c.overlay=r.overlay;
       if(r.brief_foto)c.brief_foto=r.brief_foto;
-      c.cta_applicata=!!r.cta_applicata;c.dirty=true;toast("Contenuto generato.","ok");}
+      c.cta_applicata=!!r.cta_applicata;c.dirty=true;toast("Contenuto generato.","ok");
+      saveDraft();}
   }catch(e){toast("Errore: "+e.message,"err");}
   c.generating=false;render();
 }
