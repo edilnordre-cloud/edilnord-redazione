@@ -1315,7 +1315,7 @@ function makeSlide(slide){
 
   const mkTopBar=(cnt,rightPad)=>{
     const bar=el("div",{style:`position:absolute;top:5.8%;left:7%;right:${rightPad}`});
-    bar.append(el("div",{style:`font-size:1.8cqw;color:${DARK};margin-bottom:.8%`},"www.edilnordre.it"),mkPill());
+    bar.append(el("div",{style:`font-size:1.8cqw;color:${DARK}`},"www.edilnordre.it"));
     const num=el("div",{style:`position:absolute;top:5.8%;right:${rightPad};font-size:2.4cqw;font-weight:300;color:${DARK}`},cnt);
     return [bar,num];
   };
@@ -1328,9 +1328,7 @@ function makeSlide(slide){
     if(slide.foto)W.append(el("img",{src:slide.foto,style:"position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.47"}));
     W.append(el("div",{style:"position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.98) 0%,rgba(0,0,0,.7) 36%,rgba(0,0,0,.05) 100%)"}));
     W.append(el("div",{style:"position:absolute;top:5.8%;right:6.7%;font-size:2.4cqw;color:rgba(255,255,255,.5)"},"1/5"));
-    W.append(el("div",{style:"position:absolute;top:5.8%;left:6.7%;display:flex;align-items:center;gap:1.5%"},
-      el("div",{style:`width:1.5cqw;height:1.5cqw;background:${RED};border-radius:50%;flex-shrink:0`}),
-      el("div",{style:"font-size:1.8cqw;font-weight:800;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.18em"},"Edilblog")));
+    W.append(el("div",{style:"position:absolute;top:5.8%;left:6.7%;font-size:1.8cqw;color:rgba(255,255,255,.72)"},"www.edilnordre.it"));
     const hook=String(slide.hook||'').slice(0,60);
     const hl=hook.length;
     const fs=hl>46?5.7:hl>36?6.8:hl>28?8.1:hl>20?9.6:11.9;
@@ -1380,7 +1378,7 @@ function makeSlide(slide){
   else if(slide.type==='cta'){
     W.style.background='#ffffff';
     const bar=el("div",{style:`position:absolute;top:5.8%;left:7%;right:7.4%`});
-    bar.append(el("div",{style:`font-size:1.8cqw;color:${DARK};margin-bottom:.8%`},"www.edilnordre.it"),mkPill());
+    bar.append(el("div",{style:`font-size:1.8cqw;color:${DARK}`},"www.edilnordre.it"));
     W.append(bar,el("div",{style:`position:absolute;top:5.8%;right:7.4%;font-size:2.4cqw;font-weight:300;color:${DARK}`},"5/5"));
     W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:7%;display:flex;align-items:center;gap:3%`},
       el("div",{style:`width:12.2cqw;height:12.2cqw;background:${RED};border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0`},
