@@ -1282,16 +1282,35 @@ function suggerimentoOrario(){
 function buildCarouselSlides(c){
   const hook=(c.hookScelto&&c.hookScelto.testo?c.hookScelto.testo:c.titolo||'SCOPRI DI PIÙ').toUpperCase();
   const foto=c.foto&&c.foto.length?c.foto[0]:'';
+  const ensureArr=v=>Array.isArray(v)?v:(typeof v==='string'?v.split('|').map(s=>s.trim()).filter(Boolean):[]);
+  // Se Mistral ha già generato il contenuto strutturato, usalo
+  if(c.slide2_intro){
+    return [
+      {type:'hook',foto,hook},
+      {type:'contenuto',bg:'green',circleL:'I',circleFS:4.8,title:'PUNTI<br>CHIAVE',cnt:'2/5',intro:c.slide2_intro,punti:ensureArr(c.slide2_punti)},
+      {type:'contenuto',bg:'gray',circleL:"L'",circleFS:3.4,title:'ANALISI',cnt:'3/5',intro:c.slide3_intro,punti:ensureArr(c.slide3_punti)},
+      {type:'contenuto',bg:'green',circleL:'IL',circleFS:3.6,title:'CONSIGLIO',cnt:'4/5',intro:c.slide4_intro,punti:ensureArr(c.slide4_punti)},
+      {type:'cta',testo:c.cta_testo||'',link:c.cta_link||'Scopri su www.edilnordre.it'}
+    ];
+  }
+  // Preview approssimativa da intervista
   const risp=c.intervista&&c.intervista.risposte
     ?c.intervista.risposte.map((r,i)=>({d:(c.intervista.domande&&c.intervista.domande[i])||{},r:String(r||'').trim()})).filter(x=>x.r)
     :[];
-  const snip=risp.map(x=>{const t=x.r.replace(/\n+/g,' ').trim();return t.length>72?t.slice(0,69)+'…':t;});
+  const snip=risp.map(x=>{const t=x.r.replace(/\n+/g,' ').trim();return t.length>110?t.slice(0,107)+'…':t;});
+  const p=(i,def)=>snip[i]||def;
   return [
     {type:'hook',foto,hook},
-    {type:'punti',punti:[snip[0]||'Punto 1 — dall\'intervista',snip[1]||'Punto 2 — dall\'intervista',snip[2]||'Punto 3 — dall\'intervista']},
-    {type:'analisi',testo:snip[3]||'Analisi — l\'AI la scrive dall\'intervista al momento della pubblicazione.'},
-    {type:'consiglio',testo:snip[4]||'Consiglio — generato dall\'AI dall\'intervista, non dall\'articolo blog.'},
-    {type:'cta'}
+    {type:'contenuto',bg:'green',circleL:'I',circleFS:4.8,title:'PUNTI<br>CHIAVE',cnt:'2/5',
+      intro:p(0,'I punti chiave emergeranno dall\'analisi al momento della pubblicazione.'),
+      punti:[p(1,'Punto chiave 1'),p(2,'Punto chiave 2'),p(3,'Punto chiave 3')]},
+    {type:'contenuto',bg:'gray',circleL:"L'",circleFS:3.4,title:'ANALISI',cnt:'3/5',
+      intro:p(4,'L\'analisi locale sarà generata dall\'AI al momento della pubblicazione.'),
+      punti:[p(5,'Dato di contesto locale'),p(6,'Ragionamento sul mercato')]},
+    {type:'contenuto',bg:'green',circleL:'IL',circleFS:3.6,title:'CONSIGLIO',cnt:'4/5',
+      intro:p(7,'Il consiglio pratico per i proprietari di Brugherio.'),
+      punti:[p(8,'Azione consigliata'),p(9,'Cosa evitare')]},
+    {type:'cta',testo:'',link:'Scopri su www.edilnordre.it'}
   ];
 }
 function makeSlide(slide){
@@ -1338,42 +1357,25 @@ function makeSlide(slide){
       el("img",{src:LOGO,style:"width:6.7cqw;height:6.7cqw;border-radius:50%;border:2px solid rgba(255,255,255,.5);object-fit:cover;aspect-ratio:1"}),
       el("div",{style:"font-size:2.4cqw;color:rgba(255,255,255,.65)"},"@edilnordre")));
   }
-  else if(slide.type==='punti'){
-    W.style.background=GREEN;
-    W.append(mkSwipe(GRAY));
-    const [bar,num]=mkTopBar('2/5','18%'); W.append(bar,num);
+  else if(slide.type==='contenuto'){
+    const bg=slide.bg==='gray'?GRAY:GREEN;
+    const swipeBg=slide.bg==='gray'?GREEN:GRAY;
+    W.style.background=bg;
+    W.append(mkSwipe(swipeBg));
+    const [bar,num]=mkTopBar(slide.cnt,'18%'); W.append(bar,num);
     W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:20%;display:flex;align-items:center;gap:3%`},
-      mkCircle('I',4.8),
-      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`,html:"PUNTI<br>CHIAVE"})));
-    const pts=el("div",{style:"position:absolute;top:42%;left:7%;right:20%"});
-    (slide.punti||[]).forEach((p,i)=>{
-      const row=el("div",{style:`display:grid;grid-template-columns:12% 1fr;align-items:start;${i<2?'margin-bottom:5%':''}`});
+      mkCircle(slide.circleL,slide.circleFS),
+      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`,html:slide.title})));
+    const block=el("div",{style:"position:absolute;top:40%;left:7%;right:20%"});
+    block.append(el("div",{style:`font-size:3cqw;color:${DARK};line-height:1.5;font-weight:400;margin-bottom:3%`},String(slide.intro||'')));
+    (slide.punti||[]).slice(0,3).forEach(pt=>{
+      const row=el("div",{style:"display:flex;align-items:flex-start;gap:2.5%;margin-bottom:2.2%"});
       row.append(
-        el("div",{style:`font-family:'Anton',sans-serif;font-size:7.4cqw;color:${RED};text-align:right;padding-right:3%;border-right:2.5px solid ${RED};line-height:1`},`0${i+1}`),
-        el("div",{style:`font-size:3.1cqw;color:${DARK};padding-top:.8%;padding-left:2.5%;line-height:1.38`},p));
-      pts.append(row);
+        el("div",{style:`width:1.1cqw;height:1.1cqw;min-width:1.1cqw;background:${RED};border-radius:50%;margin-top:1.1%;flex-shrink:0`}),
+        el("div",{style:`font-size:2.8cqw;color:${DARK};line-height:1.38`},pt));
+      block.append(row);
     });
-    W.append(pts,mkFooter(DARK),mkBkm('18%'));
-  }
-  else if(slide.type==='analisi'){
-    W.style.background=GRAY;
-    W.append(mkSwipe(GREEN));
-    const [bar,num]=mkTopBar('3/5','18%'); W.append(bar,num);
-    W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:20%;display:flex;align-items:center;gap:3%`},
-      mkCircle("L'",3.4),
-      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`},"ANALISI")));
-    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:20%;font-size:3.7cqw;color:${DARK};line-height:1.55`},String(slide.testo||'')));
-    W.append(mkFooter(DARK),mkBkm('18%'));
-  }
-  else if(slide.type==='consiglio'){
-    W.style.background=GREEN;
-    W.append(mkSwipe(GRAY));
-    const [bar,num]=mkTopBar('4/5','18%'); W.append(bar,num);
-    W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:20%;display:flex;align-items:center;gap:3%`},
-      mkCircle('IL',3.6),
-      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`},"CONSIGLIO")));
-    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:20%;font-size:3.7cqw;color:${DARK};line-height:1.55`},String(slide.testo||'')));
-    W.append(mkFooter(DARK),mkBkm('18%'));
+    W.append(block,mkFooter(DARK),mkBkm('18%'));
   }
   else if(slide.type==='cta'){
     W.style.background='#ffffff';
@@ -1384,9 +1386,11 @@ function makeSlide(slide){
       el("div",{style:`width:12.2cqw;height:12.2cqw;background:${RED};border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0`},
         el("span",{style:`font-family:'Anton',sans-serif;font-size:2.2cqw;color:#fff;text-align:center;line-height:1.15`,html:"PASSA<br>ALL'"})),
       el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`},"AZIONE")));
-    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:7%;font-size:3.7cqw;color:${DARK};line-height:1.55`},"Salva questo post e contattaci per una valutazione gratuita. Nessun impegno, solo chiarezza sul valore del tuo immobile."));
+    const ctaTesto=slide.testo||'Salva questo post e contattaci per una valutazione gratuita. Nessun impegno, solo chiarezza sul valore del tuo immobile.';
+    const ctaLink=slide.link||'Analisi gratuita su www.edilnordre.it';
+    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:7%;font-size:3.7cqw;color:${DARK};line-height:1.55`},ctaTesto));
     W.append(el("div",{style:`position:absolute;top:65%;left:7%;right:7%;background:${GREEN};padding:2.2% 3.3%`},
-      el("div",{style:`font-size:3cqw;font-weight:700;color:${DARK}`},"Analisi gratuita su www.edilnordre.it")));
+      el("div",{style:`font-size:3cqw;font-weight:700;color:${DARK}`},ctaLink)));
     W.append(mkFooter(DARK),mkBkm('7.4%'));
   }
   return W;
