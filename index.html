@@ -247,6 +247,7 @@ a{color:var(--sage-ink)}
 .ig-media{aspect-ratio:1;background:var(--surface-2);position:relative;overflow:hidden;display:grid;place-items:center}
 .ig-media img,.ig-media video{width:100%;height:100%;object-fit:cover}
 .ig-media.reel{aspect-ratio:9/16;max-height:440px;background:#111}
+.ig-media.car{aspect-ratio:4/5;container-type:inline-size}
 .ig-media .empty{color:var(--muted);font-size:12px;text-align:center;padding:20px}
 .ig-media .cnt{position:absolute;top:9px;right:9px;background:rgba(29,29,27,.66);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px}
 .ig-actions{display:flex;gap:15px;padding:10px 13px 4px;font-size:19px;color:var(--ink)}
@@ -559,7 +560,7 @@ function BozzeView(){
   return frag;
 }
 function capitalize(s){return s?s[0].toUpperCase()+s.slice(1):"";}
-function tipoLabel(t){const m={post_ig:"Post IG",articolo_blog:"Blog+Post",reel:"Reel",entrambi:"Blog+Post"};return m[t]||t||"";}
+function tipoLabel(t){const m={post_ig:"Blog+IG",articolo_blog:"Blog+IG",reel:"Reel",entrambi:"Blog+Carosello IG"};return m[t]||t||"";}
 
 /* ============================================================ CALENDARIO */
 function CalendarView(){
@@ -826,7 +827,7 @@ function startComposer(slot,extra={}){
     isNew:!slot,
     data:slot?slot.data:(extra.autoData||""),ora:slot?slot.ora:"",
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
-    tipo:slot?(slot.tipo||"post_ig"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"post_ig"),
+    tipo:slot?(slot.tipo||"entrambi"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"entrambi"),
     tema:idea?idea.titolo:(slot&&slot.tema?slot.tema:slot&&slot.titolo?slot.titolo:""),
     titolo:slot?(slot.titolo||_savedTitolo||""):"",
     caption_ig:_caption,
@@ -881,7 +882,7 @@ function stepGuards(){
   const c=S.composer;
   const hasIntervista=c.intervista&&c.intervista.risposte&&c.intervista.risposte.some(r=>String(r||"").trim());
   const hasFoto=c.tipo==="reel"?(c.url_video||c.foto.length>=3):c.foto.length>0;
-  const hasTesto=!!(c.caption_ig&&(c.tipo!=="articolo_blog"||c.testo_blog));
+  const hasTesto=!!(c.caption_ig&&(c.tipo==="reel"||c.testo_blog));
   const hasHook=!!(c.hookScelto&&c.hookScelto.testo);
   const done=[];if(c.tema)done.push("idea");if(hasIntervista)done.push("intervista");if(hasTesto)done.push("testo");if(hasHook)done.push("hook");if(hasFoto)done.push("foto");
   const reach=["idea"];if(c.tema)reach.push("intervista");if(hasIntervista)reach.push("testo");if(hasTesto)reach.push("hook");if(hasHook)reach.push("foto","anteprima","programma");
@@ -1083,7 +1084,7 @@ function stepPanel(){
   }
   return panel;
 }
-function defaultOra(){const c=S.composer;if(c.tipo==="articolo_blog")return "08:00";if(c.pilastro==="reel"||c.tipo==="reel")return "11:00";return "19:00";}
+function defaultOra(){const c=S.composer;if(c.pilastro==="reel"||c.tipo==="reel")return "11:00";if(c.tipo==="entrambi")return "08:00";return "19:00";}
 function checkVacFlag(){const c=S.composer;const v=vacInfo();if(c.richiedi_ok&&v.on&&c.data&&c.data>=v.i&&c.data<=v.f)toast("Attenzione: in Modalità Vacanza i contenuti con OK esplicito NON escono. Verrà tenuto in attesa.","warn",6000);}
 
 function pilPicker(){const c=S.composer;return el("div",{class:"field",style:"flex:1"},el("label",{},"Pilastro"),
@@ -1091,7 +1092,7 @@ function pilPicker(){const c=S.composer;return el("div",{class:"field",style:"fl
     ...["territorio","dati","reale","reel"].map(p=>{const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label+" — "+PILLARS[p].perc);if(c.pilastro===p)o.selected=true;return o;})));}
 function tipoPicker(){const c=S.composer;return el("div",{class:"field",style:"flex:1"},el("label",{},"Tipo"),
   el("select",{class:"sel",onchange:e=>{c.tipo=e.target.value;c.dirty=true;render();}},
-    ...[["post_ig","Post Instagram"],["articolo_blog","Articolo blog + post"],["reel","Reel"],["entrambi","Blog + IG"]].map(([v,l])=>{const o=el("option",{value:v},l);if(c.tipo===v)o.selected=true;return o;})));}
+    ...[["entrambi","Blog + Carosello IG"],["reel","Reel"]].map(([v,l])=>{const o=el("option",{value:v},l);if(c.tipo===v)o.selected=true;return o;})));}
 
 function reelModes(){const c=S.composer;
   const modes=[["foto","5-8 foto","Il server monta lo slideshow"],["clip","4-6 clip video","Concatenate con overlay (meglio: c'è movimento)"],["mp4","MP4 pronto","Montato in Canva Pro, va dritto in coda"]];
@@ -1206,43 +1207,117 @@ function suggerimentoOrario(){
   return box;
 }
 
-/* carousel slides builder */
+/* carousel slides builder — sempre 5 slide fisse come genera n8n */
 function buildCarouselSlides(c){
-  const slides=[];
-  if(c.foto&&c.foto.length) slides.push({type:"photo",src:c.foto[0],title:c.titolo||""});
-  const cap=c.caption_ig||"";
-  const paras=cap.split(/\n{2,}|\n(?=[▶➡✅💡📌•\-*])/m)
-    .map(p=>p.replace(/\n/g," ").trim())
-    .filter(p=>p.length>10)
-    .slice(0,3);
-  paras.forEach(p=>slides.push({type:"text",content:p}));
-  if(slides.length>0) slides.push({type:"cta"});
-  return slides;
+  const hook=(c.hookScelto&&c.hookScelto.testo?c.hookScelto.testo:c.titolo||'SCOPRI DI PIÙ').toUpperCase();
+  const foto=c.foto&&c.foto.length?c.foto[0]:'';
+  const raw=(c.testo_blog||c.caption_ig||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const sents=raw.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(s=>s.length>8);
+  const tr=(i,max)=>{const t=sents[i]||'';if(t.length<=max)return t;const cut=t.lastIndexOf(' ',max);return(cut>max*.6?t.slice(0,cut):t.slice(0,max))+'…';};
+  return [
+    {type:'hook',foto,hook},
+    {type:'punti',punti:[tr(0,48)||'Primo punto chiave',tr(1,48)||'Secondo punto',tr(2,48)||'Terzo punto']},
+    {type:'analisi',testo:sents.slice(3,6).join(' ').slice(0,220)||'Analisi del mercato immobiliare di Brianza con dati concreti.'},
+    {type:'consiglio',testo:sents.slice(6,9).join(' ').slice(0,220)||'Valuta il tuo immobile con i nostri esperti. Analisi gratuita, senza impegno.'},
+    {type:'cta'}
+  ];
 }
 function makeSlide(slide){
-  const W=el("div",{style:"position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box"});
-  if(slide.type==="photo"){
-    W.style.background="#000";
-    W.append(el("img",{src:slide.src,style:"position:absolute;inset:0;width:100%;height:100%;object-fit:cover"}));
-    W.append(el("div",{style:"position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(transparent,rgba(0,0,0,.72))"}));
-    const txt=el("div",{style:"position:absolute;bottom:0;left:0;right:0;padding:12px 13px 11px"});
-    txt.append(el("div",{style:"font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px"},"EDILNORD RE"));
-    if(slide.title) txt.append(el("div",{style:"font-family:'Anton',sans-serif;text-transform:uppercase;color:#fff;font-size:15px;line-height:1.15;letter-spacing:.01em"},slide.title));
-    W.append(txt);
-  } else if(slide.type==="text"){
-    W.style.background="#0d1b2a";
-    W.append(el("div",{style:"position:absolute;top:0;left:0;right:0;height:3px;background:#c8794a"}));
-    W.append(el("div",{style:"position:absolute;top:10%;left:11%;font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#c8794a"},"EDILNORD RE"));
-    const body=el("div",{style:"position:absolute;top:30%;left:11%;right:11%;color:#fff;font-size:12px;line-height:1.55;font-weight:600"});
-    body.textContent=slide.content;
-    W.append(body);
-  } else {
-    W.style.background="#c8794a";
-    W.append(el("div",{style:"position:absolute;top:10%;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.7);white-space:nowrap"},"EDILNORD RE"));
-    const ctr=el("div",{style:"position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14%;text-align:center;gap:10px"});
-    ctr.append(el("div",{style:"font-weight:700;font-size:14px;color:#fff;line-height:1.3;max-width:180px"},"La tua casa vale quanto pensi?"));
-    ctr.append(el("div",{style:"background:#0d1b2a;color:#fff;padding:6px 14px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.03em;white-space:nowrap"},"Scopri il valore gratuito →"));
-    W.append(ctr);
+  const RED='#e63946',GREEN='#9DC0AA',GRAY='#f0efeb',DARK='#0a0a0a';
+  const LOGO='https://edilnordre.it/wp-content/uploads/2025/02/cropped-favicon-logo-tondo-270x270.webp';
+  const W=el("div",{style:"position:absolute;inset:0;overflow:hidden"});
+
+  const mkPill=()=>el("div",{style:`display:inline-block;background:${RED};padding:.35em 1em;border-radius:4em`},
+    el("span",{style:"font-family:'Anton',sans-serif;font-size:2.2cqw;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.04em"},"Edilblog"));
+
+  const mkFooter=(col)=>el("div",{style:`position:absolute;bottom:5.2%;left:7%;display:flex;align-items:center;gap:1.5%`},
+    el("img",{src:LOGO,style:`width:6.7cqw;height:6.7cqw;border-radius:50%;border:2px solid ${RED};object-fit:cover;aspect-ratio:1`}),
+    el("div",{style:`font-size:2.5cqw;color:${col}`},"@edilnordre"));
+
+  const mkBkm=(right)=>el("div",{style:`position:absolute;bottom:4.3%;right:${right};width:4.4cqw;height:6cqw;background:${RED};clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)`});
+
+  const mkSwipe=(bg)=>el("div",{style:`position:absolute;top:0;right:-17%;width:37%;height:100%;background:${bg};border-radius:50%;border:2px solid ${DARK}`},
+    el("div",{style:"position:absolute;top:50%;left:28%;transform:translateY(-50%);text-align:center"},
+      el("div",{style:`font-size:6cqw;color:${DARK};line-height:1`},"→"),
+      el("div",{style:`font-size:1.8cqw;color:${DARK};letter-spacing:.2em`},"swipe")));
+
+  const mkTopBar=(cnt,rightPad)=>{
+    const bar=el("div",{style:`position:absolute;top:5.8%;left:7%;right:${rightPad}`});
+    bar.append(el("div",{style:`font-size:1.8cqw;color:${DARK};margin-bottom:.8%`},"www.edilnordre.it"),mkPill());
+    const num=el("div",{style:`position:absolute;top:5.8%;right:${rightPad};font-size:2.4cqw;font-weight:300;color:${DARK}`},cnt);
+    return [bar,num];
+  };
+
+  const mkCircle=(letter,fs)=>el("div",{style:`width:12.2cqw;height:12.2cqw;background:${RED};border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0`},
+    el("span",{style:`font-family:'Anton',sans-serif;font-size:${fs}cqw;color:#fff;text-align:center;line-height:1.1`},letter));
+
+  if(slide.type==='hook'){
+    W.style.background=DARK;
+    if(slide.foto)W.append(el("img",{src:slide.foto,style:"position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.47"}));
+    W.append(el("div",{style:"position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.98) 0%,rgba(0,0,0,.7) 36%,rgba(0,0,0,.05) 100%)"}));
+    W.append(el("div",{style:"position:absolute;top:5.8%;right:6.7%;font-size:2.4cqw;color:rgba(255,255,255,.5)"},"1/5"));
+    W.append(el("div",{style:"position:absolute;top:5.8%;left:6.7%;display:flex;align-items:center;gap:1.5%"},
+      el("div",{style:`width:1.5cqw;height:1.5cqw;background:${RED};border-radius:50%;flex-shrink:0`}),
+      el("div",{style:"font-size:1.8cqw;font-weight:800;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.18em"},"Edilblog")));
+    const hook=String(slide.hook||'').slice(0,60);
+    const hl=hook.length;
+    const fs=hl>46?5.7:hl>36?6.8:hl>28?8.1:hl>20?9.6:11.9;
+    W.append(el("div",{style:`position:absolute;bottom:17%;left:6.7%;right:6.7%;font-family:'Anton',sans-serif;font-size:${fs}cqw;color:#fff;text-transform:uppercase;line-height:1.02`},hook));
+    W.append(el("div",{style:"position:absolute;bottom:11%;right:6.7%;font-size:2cqw;color:rgba(255,255,255,.48);letter-spacing:.22em"},"swipe →"));
+    W.append(el("div",{style:"position:absolute;bottom:5%;left:6.7%;display:flex;align-items:center;gap:1.5%"},
+      el("img",{src:LOGO,style:"width:6.7cqw;height:6.7cqw;border-radius:50%;border:2px solid rgba(255,255,255,.5);object-fit:cover;aspect-ratio:1"}),
+      el("div",{style:"font-size:2.4cqw;color:rgba(255,255,255,.65)"},"@edilnordre")));
+  }
+  else if(slide.type==='punti'){
+    W.style.background=GREEN;
+    W.append(mkSwipe(GRAY));
+    const [bar,num]=mkTopBar('2/5','18%'); W.append(bar,num);
+    W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:20%;display:flex;align-items:center;gap:3%`},
+      mkCircle('I',4.8),
+      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`,html:"PUNTI<br>CHIAVE"})));
+    const pts=el("div",{style:"position:absolute;top:42%;left:7%;right:20%"});
+    (slide.punti||[]).forEach((p,i)=>{
+      const row=el("div",{style:`display:grid;grid-template-columns:12% 1fr;align-items:start;${i<2?'margin-bottom:5%':''}`});
+      row.append(
+        el("div",{style:`font-family:'Anton',sans-serif;font-size:7.4cqw;color:${RED};text-align:right;padding-right:3%;border-right:2.5px solid ${RED};line-height:1`},`0${i+1}`),
+        el("div",{style:`font-size:3.1cqw;color:${DARK};padding-top:.8%;padding-left:2.5%;line-height:1.38`},p));
+      pts.append(row);
+    });
+    W.append(pts,mkFooter(DARK),mkBkm('18%'));
+  }
+  else if(slide.type==='analisi'){
+    W.style.background=GRAY;
+    W.append(mkSwipe(GREEN));
+    const [bar,num]=mkTopBar('3/5','18%'); W.append(bar,num);
+    W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:20%;display:flex;align-items:center;gap:3%`},
+      mkCircle("L'",3.4),
+      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`},"ANALISI")));
+    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:20%;font-size:3.7cqw;color:${DARK};line-height:1.55`},String(slide.testo||'')));
+    W.append(mkFooter(DARK),mkBkm('18%'));
+  }
+  else if(slide.type==='consiglio'){
+    W.style.background=GREEN;
+    W.append(mkSwipe(GRAY));
+    const [bar,num]=mkTopBar('4/5','18%'); W.append(bar,num);
+    W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:20%;display:flex;align-items:center;gap:3%`},
+      mkCircle('IL',3.6),
+      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`},"CONSIGLIO")));
+    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:20%;font-size:3.7cqw;color:${DARK};line-height:1.55`},String(slide.testo||'')));
+    W.append(mkFooter(DARK),mkBkm('18%'));
+  }
+  else if(slide.type==='cta'){
+    W.style.background='#ffffff';
+    const bar=el("div",{style:`position:absolute;top:5.8%;left:7%;right:7.4%`});
+    bar.append(el("div",{style:`font-size:1.8cqw;color:${DARK};margin-bottom:.8%`},"www.edilnordre.it"),mkPill());
+    W.append(bar,el("div",{style:`position:absolute;top:5.8%;right:7.4%;font-size:2.4cqw;font-weight:300;color:${DARK}`},"5/5"));
+    W.append(el("div",{style:`position:absolute;top:19.6%;left:7%;right:7%;display:flex;align-items:center;gap:3%`},
+      el("div",{style:`width:12.2cqw;height:12.2cqw;background:${RED};border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0`},
+        el("span",{style:`font-family:'Anton',sans-serif;font-size:2.2cqw;color:#fff;text-align:center;line-height:1.15`,html:"PASSA<br>ALL'"})),
+      el("div",{style:`font-family:'Anton',sans-serif;font-size:7.6cqw;color:${DARK};text-transform:uppercase;line-height:.95`},"AZIONE")));
+    W.append(el("div",{style:`position:absolute;top:40%;left:7%;right:7%;font-size:3.7cqw;color:${DARK};line-height:1.55`},"Salva questo post e contattaci per una valutazione gratuita. Nessun impegno, solo chiarezza sul valore del tuo immobile."));
+    W.append(el("div",{style:`position:absolute;top:65%;left:7%;right:7%;background:${GREEN};padding:2.2% 3.3%`},
+      el("div",{style:`font-size:3cqw;font-weight:700;color:${DARK}`},"Analisi gratuita su www.edilnordre.it")));
+    W.append(mkFooter(DARK),mkBkm('7.4%'));
   }
   return W;
 }
@@ -1256,16 +1331,10 @@ function previewPanel(){
 }
 function igCard(){
   const c=S.composer;
-  if(c.tipo==="articolo_blog"){
-    return el("div",{class:"ig-card"},el("div",{class:"blog-prev"},
-      el("h1",{},c.titolo||"Titolo articolo"),
-      c.testo_blog?el("div",{html:sanitize(c.testo_blog)}):el("p",{style:"color:var(--muted)"},"L'anteprima dell'articolo apparirà qui dopo la generazione."),
-    ));
-  }
   const isReel=c.tipo==="reel";
   const carSlides=isReel?[]:buildCarouselSlides(c);
   const carIdx=Math.min(c._carIdx||0,Math.max(0,carSlides.length-1));
-  const media=el("div",{class:"ig-media"+(isReel?" reel":"")});
+  const media=el("div",{class:"ig-media"+(isReel?" reel":" car")});
   if(isReel&&c.url_video)media.append(el("video",{src:c.url_video,muted:true,loop:true,autoplay:true,playsinline:true}));
   else if(carSlides.length){
     media.append(makeSlide(carSlides[carIdx]));
@@ -1417,7 +1486,7 @@ function batchTable(){
     tr.append(el("td",{},(()=>{const cb=el("input",{type:"checkbox"});cb.checked=r.sel;cb.onchange=e=>{r.sel=e.target.checked;render();};return cb;})()));
     tr.append(el("td",{},(()=>{const i=el("input",{class:"tin",value:r.titolo,style:"font-weight:600"});i.oninput=e=>r.titolo=e.target.value;return i;})()));
     tr.append(el("td",{},(()=>{const s=el("select",{class:"tin"},...["territorio","dati","reale","reel"].map(p=>{const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label);if(r.pilastro===p)o.selected=true;return o;}));s.onchange=e=>r.pilastro=e.target.value;return s;})()));
-    tr.append(el("td",{},(()=>{const s=el("select",{class:"tin"},...[["post_ig","Post"],["reel","Reel"],["articolo_blog","Blog"]].map(([v,l])=>{const o=el("option",{value:v},l);if(r.tipo===v)o.selected=true;return o;}));s.onchange=e=>r.tipo=e.target.value;return s;})()));
+    tr.append(el("td",{},(()=>{const s=el("select",{class:"tin"},...[["entrambi","Blog+IG"],["reel","Reel"]].map(([v,l])=>{const o=el("option",{value:v},l);if(r.tipo===v)o.selected=true;return o;}));s.onchange=e=>r.tipo=e.target.value;return s;})()));
     tr.append(el("td",{},(()=>{const ta=el("textarea",{class:"tin",style:"min-height:54px;resize:vertical"});ta.value=r.caption_ig;ta.oninput=e=>r.caption_ig=e.target.value;return ta;})()));
     // media cell
     const mc=el("td",{});
