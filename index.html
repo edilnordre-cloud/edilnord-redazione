@@ -488,7 +488,9 @@ function Shell(){
     el("div",{class:"brand"},el("img",{src:LOGO,alt:"Edilnord"}),
       el("div",{},el("div",{class:"bt"},"Redazione"),el("div",{class:"bs"},"Edilnord RE"))),
     el("nav",{class:"nav"},...navItems.map(([v,ic,lb,bd])=>
-      el("button",{class:S.view===v?"on":"",onclick:()=>nav(v)},
+      el("button",{class:S.view===v?"on":"",onclick:()=>{
+        if(v==="composer"&&!S.composer)startComposer();else nav(v);
+      }},
         el("span",{class:"ic"},ic),el("span",{},lb),
         bd?el("span",{class:"badge"},String(bd)):null))),
     el("div",{class:"side-foot"},dryPill(),
@@ -738,6 +740,26 @@ function IdeeView(){
     });
     frag.append(devGrid);
   }
+  // ── Idee scartate (per tracciare il pattern) ───────────────
+  const scartate=S.data.idee.filter(i=>i.stato==="scartata");
+  if(scartate.length){
+    const det=el("details",{style:"margin-top:18px"});
+    det.append(el("summary",{style:"cursor:pointer;font-size:13px;color:var(--muted);font-weight:600;padding:8px 0;user-select:none"},
+      `✕ ${scartate.length} idea${scartate.length===1?"":"e"} scartata${scartate.length===1?"":"e"}`));
+    const tbl=el("table",{style:"width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px"});
+    tbl.append(el("thead",{},el("tr",{},...["Titolo","Pilastro","Motivo"].map(h=>el("th",{style:"text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)"},h)))));
+    const tb=el("tbody",{});
+    scartate.forEach(i=>{
+      const p=PILLARS[i.pilastro]||PILLARS.territorio;
+      tb.append(el("tr",{},
+        el("td",{style:"padding:7px 8px;border-bottom:1px solid var(--line);color:var(--ink-2)"},i.titolo||"—"),
+        el("td",{style:"padding:7px 8px;border-bottom:1px solid var(--line)"},el("span",{class:"chip p-"+i.pilastro,style:"font-size:11px"},p.emoji+" "+p.label)),
+        el("td",{style:"padding:7px 8px;border-bottom:1px solid var(--line);color:var(--muted)"},i.motivo_scarto||"—")
+      ));
+    });
+    tbl.append(tb);det.append(tbl);frag.append(det);
+  }
+  // ────────────────────────────────────────────────────────────
   return frag;
 }
 async function accettaIdea(i){
@@ -750,11 +772,20 @@ async function accettaIdea(i){
   toast(autoData?("Programmato per "+fmtDate(autoData)+" — puoi cambiarlo nell'ultimo step."):"Idea aperta nel Composer.","ok",5000);
 }
 function scartaIdea(i){
-  modalConfirm("Scartare questa idea?",i.titolo,"Scarta",async()=>{
-    const prev=i.stato;i.stato="scartata";render();
-    try{await api("redazione-salva-idea",{idea:i});toastUndo("Idea scartata.",async()=>{i.stato=prev;await api("redazione-salva-idea",{idea:i});render();});}
+  const MOTIVI=["troppo generica","già fatto","non mi interessa","non ho le foto"];
+  let motivoScelto=i.motivo_scarto||"";
+  const radios=el("div",{style:"display:flex;flex-direction:column;gap:8px;margin-top:10px"});
+  MOTIVI.forEach(m=>{
+    const id="ms_"+m.replace(/\s/g,"_");
+    const label=el("label",{for:id,style:"display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px"},
+      (()=>{const r=el("input",{type:"radio",id,name:"motivo_scarto",value:m});r.checked=(motivoScelto===m);r.onchange=()=>{motivoScelto=m;};return r;})(),m);
+    radios.append(label);
+  });
+  modalCustom("Scartare questa idea?",i.titolo,[radios],"Scarta",async close=>{
+    const prev=i.stato;i.stato="scartata";if(motivoScelto)i.motivo_scarto=motivoScelto;render();close();
+    try{await api("redazione-salva-idea",{idea:i});toastUndo("Idea scartata.",async()=>{i.stato=prev;delete i.motivo_scarto;await api("redazione-salva-idea",{idea:i});render();});}
     catch(e){i.stato=prev;render();toast("Errore: "+e.message,"err");}
-  },"danger");
+  });
 }
 function findFreeSlot(pilastro,tipo){
   const today=todayStr();
@@ -899,6 +930,45 @@ function stepPanel(){
     panel.append(field("Tema / argomento",textarea(c.tema,v=>{c.tema=v;c.dirty=true;btnNextIdea.disabled=!v.trim();},"Es. Quanto vale un trilocale in Via Increa e perché la zona sta cambiando")));
     panel.append(el("div",{class:"hrow"},
       pilPicker(),tipoPicker()));
+    // ── Spunto libero ──────────────────────────────────────────
+    const spuntoOpen=!!c._spuntoOpen;
+    const spuntoBlock=el("div",{style:"margin-top:10px"});
+    if(spuntoOpen){
+      const spuntoTA=textarea(c._spuntoTesto||"",v=>{c._spuntoTesto=v;},
+        "Incolla qui: una caption Instagram, un pezzo di articolo, un URL, due righe scritte al volo… L'AI capisce il tema e prepara le domande giuste.");
+      const btnAnalizza=el("button",{class:"btn btn-p",
+        disabled:!(c._spuntoTesto||"").trim()||c.generating,
+        onclick:async()=>{
+          const testo=(c._spuntoTesto||"").trim();if(!testo)return;
+          c.generating=true;render();
+          try{
+            const r=await api("redazione-spunto",{testo});
+            if(r&&r.ok){
+              if(r.pilastro)c.pilastro=r.pilastro;
+              if(r.tema)c.tema=r.tema;
+              if(r.domande&&r.domande.length){
+                c.intervista={domande:r.domande,risposte:new Array(r.domande.length).fill("")};
+                saveIntervistaLocal();
+              }
+              c.step="intervista";c.dirty=true;
+              toast("Spunto analizzato — rispondi alle domande.","ok");
+            }else toast(r&&r.errore||"Analisi spunto fallita.","err");
+          }catch(e){toast("Errore: "+e.message,"err");}
+          c.generating=false;render();
+        }},
+        c.generating?el("span",{class:"sp"}):null,
+        c.generating?"Analizzo…":"Analizza e vai all'intervista →");
+      spuntoBlock.append(
+        field("Il tuo spunto",spuntoTA),
+        el("div",{class:"cbar"},el("span",{}),btnAnalizza)
+      );
+    }
+    spuntoBlock.append(el("button",{
+      class:"btn btn-g btn-sm",style:"align-self:flex-start;margin-top:4px",
+      onclick:()=>{c._spuntoOpen=!c._spuntoOpen;render();}},
+      spuntoOpen?"↑ Nascondi spunto":"📌 Hai uno spunto? Incollalo →"));
+    panel.append(spuntoBlock);
+    // ────────────────────────────────────────────────────────────
     panel.append(el("div",{class:"cbar"},el("span",{}),btnNextIdea));
   }
   else if(c.step==="intervista"){
@@ -1028,7 +1098,7 @@ function stepPanel(){
     if(!g.hasFoto)panel.append(el("div",{class:"gate-warn"},"📷",c.tipo==="reel"?"Servono un mp4 pronto oppure ≥3 foto/clip per montare il Reel.":"Carica almeno 1 foto reale per procedere."));
   }
   else if(c.step==="anteprima"){
-    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Slide 1 = la tua foto con titolo. Le slide successive sono generate dal contenuto per il carosello IG."));
+    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Slide 1 = la tua foto con hook. Le slide 2–4 vengono generate da n8n a partire dall\'intervista — non dall\'articolo blog. L\'anteprima mostra la struttura con frammenti delle tue risposte."));
     // Carousel: slide 1 = foto reale + titolo, slide 2-N = testo, ultima = CTA
     const antSlides=buildCarouselSlides(c);
     if(antSlides.length){
@@ -1054,7 +1124,7 @@ function stepPanel(){
         strip.append(t);
       });
       panel.append(strip);
-      if(tot>1)panel.append(el("div",{class:"hint",style:"margin-bottom:10px"},`Carosello: ${tot} slide (1 foto reale + ${tot-2} testo${tot>3?"i":""} + CTA). Le slide di testo sono generate dalla caption.`));
+      if(tot>1)panel.append(el("div",{class:"hint",style:"margin-bottom:10px"},`Carosello: ${tot} slide (1 foto + ${tot-2} testo${tot>3?"i":""} + CTA). Il testo definitivo delle slide è generato da n8n dall'intervista — questa è un'anteprima strutturale.`));
     } else {
       panel.append(el("div",{class:"empty",style:"margin-bottom:12px"},"📷 Carica almeno una foto per vedere il carosello"));
     }
@@ -1208,17 +1278,19 @@ function suggerimentoOrario(){
 }
 
 /* carousel slides builder — sempre 5 slide fisse come genera n8n */
+/* Le slide 2-4 nascono dall'INTERVISTA (non dall'articolo): anteprima strutturale */
 function buildCarouselSlides(c){
   const hook=(c.hookScelto&&c.hookScelto.testo?c.hookScelto.testo:c.titolo||'SCOPRI DI PIÙ').toUpperCase();
   const foto=c.foto&&c.foto.length?c.foto[0]:'';
-  const raw=(c.testo_blog||c.caption_ig||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
-  const sents=raw.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(s=>s.length>8);
-  const tr=(i,max)=>{const t=sents[i]||'';if(t.length<=max)return t;const cut=t.lastIndexOf(' ',max);return(cut>max*.6?t.slice(0,cut):t.slice(0,max))+'…';};
+  const risp=c.intervista&&c.intervista.risposte
+    ?c.intervista.risposte.map((r,i)=>({d:(c.intervista.domande&&c.intervista.domande[i])||{},r:String(r||'').trim()})).filter(x=>x.r)
+    :[];
+  const snip=risp.map(x=>{const t=x.r.replace(/\n+/g,' ').trim();return t.length>72?t.slice(0,69)+'…':t;});
   return [
     {type:'hook',foto,hook},
-    {type:'punti',punti:[tr(0,48)||'Primo punto chiave',tr(1,48)||'Secondo punto',tr(2,48)||'Terzo punto']},
-    {type:'analisi',testo:sents.slice(3,6).join(' ').slice(0,220)||'Analisi del mercato immobiliare di Brianza con dati concreti.'},
-    {type:'consiglio',testo:sents.slice(6,9).join(' ').slice(0,220)||'Valuta il tuo immobile con i nostri esperti. Analisi gratuita, senza impegno.'},
+    {type:'punti',punti:[snip[0]||'Punto 1 — dall\'intervista',snip[1]||'Punto 2 — dall\'intervista',snip[2]||'Punto 3 — dall\'intervista']},
+    {type:'analisi',testo:snip[3]||'Analisi — l\'AI la scrive dall\'intervista al momento della pubblicazione.'},
+    {type:'consiglio',testo:snip[4]||'Consiglio — generato dall\'AI dall\'intervista, non dall\'articolo blog.'},
     {type:'cta'}
   ];
 }
