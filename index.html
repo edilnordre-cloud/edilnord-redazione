@@ -377,7 +377,7 @@ const DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
 const S = {
   key:null, ready:false, view:"calendario", loading:true,
-  data:{calendario:[], idee:[], config:{}, immobili:[]},
+  data:{calendario:[], idee:[], config:{}, immobili:[], metriche:null},
   calMode:"mese", calMonth:new Date(2026,6,1),
   composer:null,           // stato composer attivo
   batch:null,              // stato modalità batch
@@ -482,7 +482,7 @@ function Shell(){
     ["calendario","🗓️","Calendario"],["bozze","📝","Bozze",bozzeCount||null],
     ["idee","💡","Idee",ideeNew],
     ["composer","✍️","Composer"],["batch","🗂️","Batch"],
-    ["spesa","🛒","Lista spesa"],["impostazioni","⚙️","Impostazioni"]
+    ["spesa","🛒","Lista spesa"],["andamento","📈","Andamento"],["impostazioni","⚙️","Impostazioni"]
   ];
   const side=el("aside",{class:"side"},
     el("div",{class:"brand"},el("img",{src:LOGO,alt:"Edilnord"}),
@@ -518,6 +518,7 @@ function views(){
     case"composer":return ComposerView();
     case"batch":return BatchView();
     case"spesa":return SpesaView();
+    case"andamento":return AndamentoView();
     case"impostazioni":return SettingsView();
   }
 }
@@ -890,7 +891,8 @@ function startComposer(slot,extra={}){
     step:_savedStep?_savedStep.step:_defaultStep,
     hooks:[],hookScelto:_savedStep?_savedStep.hookScelto:null,
     dirty:false, generating:false, uploading:false,
-    cta_applicata:slot?slot.cta==="valutatore":false
+    cta_applicata:slot?slot.cta==="valutatore":false,
+    ideaId:idea?idea.id:null
   };
   S.view="composer";render();
 }
@@ -1456,6 +1458,7 @@ async function saveDraft(){
   const row=composerToRow(stato);
   try{await api("redazione-salva-contenuto",{contenuto:row});
     upsertLocal(row);c.dirty=false;render();toast("Bozza salvata.","ok");
+    if(c.ideaId){const idea=(S.data.idee||[]).find(x=>x.id===c.ideaId);if(idea&&!idea.id_contenuto){idea.id_contenuto=c.id;try{await api("redazione-salva-idea",{idea});}catch(e){}}}
   }catch(e){toast("Salvataggio fallito: "+e.message,"err");}
 }
 async function setPronto(){
@@ -1668,6 +1671,68 @@ function exportSpesa(){
 }
 
 /* ============================================================ IMPOSTAZIONI */
+/* ============================================================ ANDAMENTO */
+function AndamentoView(){
+  if(S.data.metriche===null){
+    S.data.metriche="loading";
+    api("redazione-metriche",{}).then(res=>{
+      S.data.metriche=res.metriche||[];render();
+    }).catch(e=>{
+      S.data.metriche=[];
+      toast("Metriche non disponibili: "+e.message,"err");render();
+    });
+    return el("div",{class:"loading"},el("span",{class:"sp"}),"Carico metriche…");
+  }
+  if(S.data.metriche==="loading")return el("div",{class:"loading"},el("span",{class:"sp"}),"Carico metriche…");
+  const rows=[...S.data.metriche].sort((a,b)=>a.mese>b.mese?-1:1);
+  const last=rows[0]||{};
+  const frag=el("div",{});
+  frag.append(el("div",{class:"phead"},
+    el("div",{},el("h1",{},"Andamento"),
+      el("div",{class:"sub"},"Metriche mensili calcolate dal Calendario. Aggiornamento automatico il 1° del mese.")),
+    el("button",{class:"btn btn-g",onclick:()=>{S.data.metriche=null;render();}},"↺ Ricarica")));
+  const kpiDef=[
+    ["🏘️","Reach Territorio",last.reach_medio_territorio],
+    ["📊","Reach Dati",last.reach_medio_dati],
+    ["🏠","Reach Vetrina",last.reach_medio_reale],
+    ["👥","Follower Netti",last.follower_netti],
+  ];
+  const kpiGrid=el("div",{style:"display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px"});
+  for(const[ic,lb,val]of kpiDef){
+    const v=val&&String(val).trim()&&val!=="0"?String(val):"—";
+    kpiGrid.append(el("div",{style:"background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px"},
+      el("div",{style:"font-size:22px;margin-bottom:6px"},ic),
+      el("div",{style:"font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px"},lb),
+      el("div",{style:"font-size:28px;font-weight:700;font-family:'Anton',sans-serif"},v)
+    ));
+  }
+  if(last.mese)kpiGrid.append(el("div",{style:"grid-column:1/-1;font-size:12px;color:var(--muted)"},"Dati: "+last.mese+(last.note?" · "+last.note:"")));
+  frag.append(kpiGrid);
+  if(rows.length){
+    const COLS=[["mese","Mese"],["reach_totale","Reach tot."],["reach_medio_territorio","Territorio"],["reach_medio_dati","Dati"],["reach_medio_reale","Vetrina"],["follower_netti","Follower +"]];
+    const tbl=el("table",{style:"width:100%;border-collapse:collapse;font-size:13px"});
+    const tr=el("tr",{});
+    for(const[,l]of COLS)tr.append(el("th",{style:"text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--line)"},l));
+    tbl.append(el("thead",{},tr));
+    const tb=el("tbody",{});
+    for(const r of rows){
+      const row=el("tr",{});
+      for(const[k]of COLS){
+        const v=r[k]&&String(r[k]).trim()?String(r[k]):"—";
+        row.append(el("td",{style:"padding:8px 10px;border-bottom:1px solid var(--line-2)"},v));
+      }
+      tb.append(row);
+    }
+    tbl.append(tb);
+    frag.append(el("div",{style:"overflow-x:auto"},tbl));
+  }else{
+    frag.append(el("div",{style:"text-align:center;padding:60px 20px;color:var(--muted)"},
+      el("div",{style:"font-size:48px;margin-bottom:16px"},"📈"),
+      el("div",{style:"font-size:18px;font-weight:600;color:var(--ink-2);margin-bottom:8px"},"Nessun dato ancora"),
+      el("div",{},"Il workflow Metriche calcola i dati il 1° di ogni mese.")));
+  }
+  return frag;
+}
 function SettingsView(){
   const frag=el("div",{});
   frag.append(el("div",{class:"phead"},el("div",{},el("h1",{},"Impostazioni"),
@@ -1699,7 +1764,7 @@ function SettingsView(){
   // Chiave
   const kp=el("div",{class:"panel"});
   kp.append(el("h2",{},"🔐 Sessione"),el("p",{class:"pd"},"La chiave resta solo in memoria. Uscendo o ricaricando dovrai reinserirla."));
-  kp.append(el("button",{class:"btn btn-g",onclick:()=>{S.key=null;S.ready=false;S.data={calendario:[],idee:[],config:{},immobili:[]};render();}},"Esci dalla sessione"));
+  kp.append(el("button",{class:"btn btn-g",onclick:()=>{S.key=null;S.ready=false;S.data={calendario:[],idee:[],config:{},immobili:[],metriche:null};render();}},"Esci dalla sessione"));
   frag.append(kp);
   return frag;
 }
