@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -735,7 +735,7 @@ function IdeeView(){
             try{await api("redazione-salva-idea",{idea:i});toast("Nota salvata.","ok");}
             catch(e){toast("Errore: "+e.message,"err");}
           }},"💾 Salva nota"),
-          el("button",{class:"btn btn-g btn-sm",onclick:()=>startComposer(slotAssociato||null,{idea:i})},"✎ Riapri"))
+          el("button",{class:"btn btn-g btn-sm",onclick:()=>{const s=slotAssociato||findFreeSlot(i.pilastro,i.pilastro==="reel"?"reel":"entrambi");if(s)startComposer(s,{idea:i});else pickSlotThenCompose({idea:i});}},"✎ Riapri"))
       ));
     });
     frag.append(devGrid);
@@ -765,11 +765,11 @@ function IdeeView(){
 async function accettaIdea(i){
   const tipo=i.pilastro==="reel"?"reel":"entrambi";
   const slot=findFreeSlot(i.pilastro,tipo);
-  const autoData=slot?slot.data:nextDateForPillar(i.pilastro);
+  if(!slot){toast("Nessuno slot libero per pilastro \""+i.pilastro+"\". Aggiungi uno slot dal calendario prima di sviluppare questa idea.","warn",7000);return;}
   i.stato="accettata";
   try{await api("redazione-salva-idea",{idea:i});}catch(e){}
-  startComposer(slot,{idea:i,autoData});
-  toast(autoData?("Programmato per "+fmtDate(autoData)+" — puoi cambiarlo nell'ultimo step."):"Idea aperta nel Composer.","ok",5000);
+  startComposer(slot,{idea:i});
+  toast("Programmato per "+fmtDate(slot.data)+" — puoi cambiarlo nell'ultimo step.","ok",5000);
 }
 function scartaIdea(i){
   const MOTIVI=["troppo generica","già fatto","non mi interessa","non ho le foto"];
@@ -841,9 +841,24 @@ async function pollIdee(times){
 /* ============================================================ COMPOSER */
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
 function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||""}));}catch(e){}}
-async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
+async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);if(!existing)return;const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
 async function eliminaBozza(id){if(!confirm("Eliminare questa bozza?"))return;const slot=slotById(id);if(!slot)return;const row={...slot,stato:"eliminata"};try{await api("redazione-salva-contenuto",{contenuto:row});const idx=S.data.calendario.findIndex(x=>x.id===id);if(idx>=0)S.data.calendario.splice(idx,1);try{localStorage.removeItem('rdz_int_'+id);localStorage.removeItem('rdz_step_'+id);}catch(e){}render();toast("Bozza eliminata.","ok");}catch(e){toast("Errore eliminazione.","err");}}
+function pickSlotThenCompose(extra={}){
+  const today=todayStr();
+  const liberi=visibleSlots().filter(s=>s.stato==="vuoto"&&s.data>=today&&s.tipo!=="esterno")
+    .sort((a,b)=>a.data.localeCompare(b.data)).slice(0,20);
+  if(!liberi.length){toast("Nessuno slot libero nel calendario. Aggiungi gli slot prima.","warn",6000);return;}
+  const list=el("div",{style:"display:flex;flex-direction:column;gap:5px;max-height:280px;overflow-y:auto;margin-top:6px"});
+  liberi.forEach(s=>{
+    const pl=PILLARS[s.pilastro]||PILLARS.territorio;
+    list.append(el("button",{class:"btn btn-g",style:"justify-content:flex-start;text-align:left;gap:10px",onclick:()=>{
+      closeModal();startComposer(s,extra);
+    }},el("span",{},fmtDate(s.data)+" "+s.ora),el("span",{},pl.emoji+" "+capitalize(s.pilastro))));
+  });
+  modalCustom("Scegli uno slot libero",null,[list],"Annulla",c=>c());
+}
 function startComposer(slot,extra={}){
+  if(!slot){pickSlotThenCompose(extra);return;}
   const idea=extra.idea;
   const _savedInt=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_int_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
   const _savedStep=(()=>{if(!slot)return null;try{const s=localStorage.getItem('rdz_step_'+slot.id);return s?JSON.parse(s):null;}catch(e){return null;}})();
@@ -1450,6 +1465,7 @@ function composerToRow(stato){
 async function saveDraft(){
   const c=S.composer;if(!c)return;
   const existing=slotById(c.id);
+  if(!existing){toast("Questo contenuto non è associato a nessuno slot del calendario. Torna al calendario e scegli uno slot vuoto.","warn",6000);return;}
   const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";
   const row=composerToRow(stato);
   try{await api("redazione-salva-contenuto",{contenuto:row});
@@ -1458,6 +1474,7 @@ async function saveDraft(){
 }
 async function setPronto(){
   const c=S.composer;const g=stepGuards();
+  if(!slotById(c.id)){toast("Questo contenuto non è associato a nessuno slot. Torna al calendario e scegli uno slot vuoto.","warn",6000);return;}
   if(!g.hasIntervista||!g.hasFoto){toast("Mancano intervista o foto.","warn");return;}
   // reel da montare (foto/clip) → chiama monta-reel
   if(c.tipo==="reel"&&!c.url_video&&c.foto.length>=3){
@@ -1584,7 +1601,7 @@ function distribuisci(){
   const freeByPil={};
   visibleSlots().filter(s=>s.stato==="vuoto"&&s.data>=today).sort((a,b2)=>a.data.localeCompare(b2.data)).forEach(s=>{(freeByPil[s.pilastro]=freeByPil[s.pilastro]||[]).push(s);});
   let placed=0;
-  b.rows.forEach(r=>{if(r.data)return;const pool=freeByPil[r.pilastro]||freeByPil.reel||[];const slot=pool.shift();if(slot){r.data=slot.data;r.ora=slot.ora;r._slotId=slot.id;placed++;}});
+  b.rows.forEach(r=>{if(r.data)return;const pool=freeByPil[r.pilastro]||freeByPil.reel||[];const slot=pool.shift();if(slot){r.id=slot.id;r.data=slot.data;r.ora=slot.ora;placed++;}});
   render();toast(placed?("Assegnati "+placed+" contenuti ai prossimi slot liberi."):"Nessuno slot libero coerente trovato.",placed?"ok":"warn");
 }
 async function bulkSave(stato,rows){
@@ -1748,3 +1765,4 @@ S.ready=false;render();
 </script>
 </body>
 </html>
+
