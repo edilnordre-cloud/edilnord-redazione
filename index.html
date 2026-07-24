@@ -1153,7 +1153,6 @@ function stepPanel(){
     panel.append(el("h2",{},"Quando esce"),el("p",{class:"pd"},"Orari fissi di default: la regolarità vale più dell'ottimizzazione."));
     panel.append(field("Data",input(c.data,v=>{c.data=v;c.dirty=true;},"","date")));
     panel.append(field("Ora",(()=>{const s=input(c.ora||defaultOra(),v=>{c.ora=v;c.dirty=true;},"","time");return s;})()));
-    panel.append(suggerimentoOrario());
     panel.append(field("Geotag",(()=>{const i=input(c.geotag,v=>{c.geotag=v;c.dirty=true;},"Brugherio");return i;})(),"Default Brugherio. Cambialo per Concorezzo, Vimercate, ecc."));
     // richiedi OK
     const okToggle=el("label",{class:"hrow",style:"cursor:pointer;font-weight:600;font-size:14px;gap:9px"},
@@ -1277,19 +1276,6 @@ async function genTesto(indicazione){
       saveStepLocal();saveDraft();}
   }catch(e){toast("Errore: "+e.message,"err");}
   c.generating=false;render();
-}
-
-function suggerimentoOrario(){
-  const box=el("div",{class:"hint",style:"margin:-8px 0 10px;display:flex;gap:7px;align-items:center"},
-    el("button",{class:"btn btn-g btn-sm",onclick:async e=>{
-      const b=e.target;b.disabled=true;b.textContent="…";
-      try{const r=await api("edilnord-suggerisci-orario",undefined,{method:"GET"});
-        box.querySelector(".sug").textContent=r&&r.ok?`n8n suggerisce: ${r.weekday} ${r.suggestedTime} — ${r.reasonText}`:"Storico ancora troppo povero per un suggerimento affidabile.";
-      }catch(err){box.querySelector(".sug").textContent="Suggerimento non disponibile.";}
-      b.disabled=false;b.textContent="💡 Suggerisci";
-    }},"💡 Suggerisci"),
-    el("span",{class:"sug",style:"font-size:12px"},"Orario di default consigliato. Il suggerimento n8n è opzionale, non vincolante."));
-  return box;
 }
 
 /* carousel slides builder — sempre 5 slide fisse come genera n8n */
