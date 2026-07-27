@@ -788,9 +788,17 @@ function scartaIdea(i){
     catch(e){i.stato=prev;render();toast("Errore: "+e.message,"err");}
   });
 }
+// Il tipo lo decide il pilastro, non una tendina: dati va anche sul blog,
+// vetrina esce in storia, il resto è un post IG singolo.
+function tipoDaPilastro(pilastro){
+  if(pilastro==="reel")return "reel";
+  if(pilastro==="dati")return "entrambi";
+  if(pilastro==="reale")return "storia_ig";
+  return "post_ig";
+}
 function findFreeSlot(pilastro,tipo){
   const today=todayStr();
-  const cands=visibleSlots().filter(s=>s.stato==="vuoto"&&s.data>=today&&(s.pilastro===pilastro||(tipo==="reel"&&s.pilastro==="reel")))
+  const cands=visibleSlots().filter(s=>["vuoto","opzionale"].includes(s.stato)&&s.data>=today&&(s.pilastro===pilastro||(tipo==="reel"&&s.pilastro==="reel")))
     .sort((a,b)=>(a.data).localeCompare(b.data));
   return cands[0]||null;
 }
@@ -874,7 +882,13 @@ function startComposer(slot,extra={}){
     isNew:!slot,
     data:slot?slot.data:(extra.autoData||""),ora:slot?slot.ora:"",
     pilastro:slot?slot.pilastro:(idea?idea.pilastro:"territorio"),
-    tipo:slot?(slot.tipo||"entrambi"):(idea?(idea.pilastro==="reel"?"reel":"entrambi"):"entrambi"),
+    tipo:(()=>{
+      const pil=slot?slot.pilastro:(idea?idea.pilastro:"territorio");
+      const salvato=slot?String(slot.tipo||""):"";
+      const iniziato=!!(slot&&(slot.caption_ig||slot.titolo));
+      if(iniziato&&["post_ig","entrambi","storia_ig","reel"].includes(salvato))return salvato;
+      return tipoDaPilastro(pil);
+    })(),
     tema:idea?idea.titolo:(slot&&slot.tema?slot.tema:slot&&slot.titolo?slot.titolo:""),
     titolo:slot?(slot.titolo||_savedTitolo||""):"",
     caption_ig:_caption,
@@ -930,7 +944,8 @@ function stepGuards(){
   const c=S.composer;
   const hasIntervista=c.intervista&&c.intervista.risposte&&c.intervista.risposte.some(r=>String(r||"").trim());
   const hasFoto=c.tipo==="reel"?(c.url_video||c.foto.length>=3):c.foto.length>0;
-  const hasTesto=!!(c.caption_ig&&(c.tipo==="reel"||c.testo_blog));
+  const serveBlog=(c.tipo==="entrambi"||c.tipo==="articolo_blog");
+  const hasTesto=!!(c.caption_ig&&(!serveBlog||c.testo_blog));
   const hasHook=!!(c.hookScelto&&c.hookScelto.testo);
   const done=[];if(c.tema)done.push("idea");if(hasIntervista)done.push("intervista");if(hasTesto)done.push("testo");if(hasHook)done.push("hook");if(hasFoto)done.push("foto");
   const reach=["idea"];if(c.tema)reach.push("intervista");if(hasIntervista)reach.push("testo");if(hasTesto)reach.push("hook");if(hasHook)reach.push("foto","anteprima","programma");
@@ -945,8 +960,7 @@ function stepPanel(){
     panel.append(el("h2",{},"Di cosa parliamo"),el("p",{class:"pd"},"Un tema locale e concreto. Niente macroeconomia o mercato nazionale."));
     const btnNextIdea=el("button",{class:"btn btn-p",disabled:!c.tema.trim(),onclick:()=>{c.step="intervista";render();}},"Prepara l'intervista →");
     panel.append(field("Tema / argomento",textarea(c.tema,v=>{c.tema=v;c.dirty=true;btnNextIdea.disabled=!v.trim();},"Es. Quanto vale un trilocale in Via Increa e perché la zona sta cambiando")));
-    panel.append(el("div",{class:"hrow"},
-      pilPicker(),tipoPicker()));
+    panel.append(el("div",{class:"hrow"},pilPicker()));
     // ── Spunto libero ──────────────────────────────────────────
     const spuntoOpen=!!c._spuntoOpen;
     const spuntoBlock=el("div",{style:"margin-top:10px"});
@@ -1028,6 +1042,29 @@ function stepPanel(){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Scrivo…"));
     }else{
       panel.append(field("Titolo",input(c.titolo,v=>{c.titolo=v;c.dirty=true;updatePreview();})));
+      // Dove esce: default dal pilastro, ma qui puoi aggiungere o togliere il blog
+      if(c.pilastro!=="reel"){
+        const soloTipo=c.pilastro==="reale"?"storia_ig":"post_ig";
+        const soloLbl=c.pilastro==="reale"?"Solo storia IG":"Solo post Instagram";
+        const anche=(c.tipo==="entrambi");
+        const setTipo=t=>{
+          if(c.tipo===t)return;
+          c.tipo=t;c.dirty=true;
+          if(t==="entrambi"&&!c.testo_blog){
+            // serve l'articolo: rigenero testo e caption con il tipo nuovo
+            c.caption_ig="";c._autoGenTesto=false;
+            toast("Rigenero caption e articolo per il blog…","ok",4000);
+          }
+          saveStepLocal();render();
+        };
+        panel.append(el("div",{class:"field"},el("label",{},"Dove esce questo contenuto"),
+          el("div",{class:"hrow"},
+            el("button",{class:"btn "+(anche?"btn-g":"btn-p"),onclick:()=>setTipo(soloTipo)},soloLbl),
+            el("button",{class:"btn "+(anche?"btn-p":"btn-g"),onclick:()=>setTipo("entrambi")},"Anche articolo sul blog")),
+          el("div",{style:"font-size:12px;color:var(--muted);margin-top:6px"},
+            anche?"Esce l'articolo su WordPress più il carosello IG con le slide.":
+              (soloTipo==="storia_ig"?"Esce solo come storia Instagram: sparisce dopo 24 ore.":"Esce solo su Instagram, nessun articolo."))));
+      }
       if(c.tipo==="articolo_blog"||c.tipo==="entrambi"){
         const blogWrap=el("div",{class:"field"});
         const blogLabel=el("div",{class:"field-header",style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"},
@@ -1174,11 +1211,8 @@ function defaultOra(){const c=S.composer;if(c.pilastro==="reel"||c.tipo==="reel"
 function checkVacFlag(){const c=S.composer;const v=vacInfo();if(c.richiedi_ok&&v.on&&c.data&&c.data>=v.i&&c.data<=v.f)toast("Attenzione: in Modalità Vacanza i contenuti con OK esplicito NON escono. Verrà tenuto in attesa.","warn",6000);}
 
 function pilPicker(){const c=S.composer;return el("div",{class:"field",style:"flex:1"},el("label",{},"Pilastro"),
-  el("select",{class:"sel",onchange:e=>{c.pilastro=e.target.value;c.dirty=true;render();}},
+  el("select",{class:"sel",onchange:e=>{c.pilastro=e.target.value;c.tipo=tipoDaPilastro(c.pilastro);c.dirty=true;render();}},
     ...["territorio","dati","reale","reel"].map(p=>{const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label+" — "+PILLARS[p].perc);if(c.pilastro===p)o.selected=true;return o;})));}
-function tipoPicker(){const c=S.composer;return el("div",{class:"field",style:"flex:1"},el("label",{},"Tipo"),
-  el("select",{class:"sel",onchange:e=>{c.tipo=e.target.value;c.dirty=true;render();}},
-    ...[["entrambi","Blog + Carosello IG"],["reel","Reel"]].map(([v,l])=>{const o=el("option",{value:v},l);if(c.tipo===v)o.selected=true;return o;})));}
 
 function reelModes(){const c=S.composer;
   const modes=[["foto","5-8 foto","Il server monta lo slideshow"],["clip","4-6 clip video","Concatenate con overlay (meglio: c'è movimento)"],["mp4","MP4 pronto","Montato in Canva Pro, va dritto in coda"]];
