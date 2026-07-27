@@ -889,7 +889,7 @@ function startComposer(slot,extra={}){
     id_intervista:slot?slot.id_intervista||"":"",
     intervista:_savedInt,
     step:_savedStep?_savedStep.step:_defaultStep,
-    hooks:[],hookScelto:_savedStep?_savedStep.hookScelto:null,
+    hooks:[],hookScelto:(_savedStep&&_savedStep.hookScelto)?_savedStep.hookScelto:((slot&&slot.hook)?{tipo:"salvato",testo:slot.hook}:null),
     dirty:false, generating:false, uploading:false,
     cta_applicata:slot?slot.cta==="valutatore":false,
     ideaId:idea?idea.id:null
@@ -1115,7 +1115,7 @@ function stepPanel(){
     if(!g.hasFoto)panel.append(el("div",{class:"gate-warn"},"📷",c.tipo==="reel"?"Servono un mp4 pronto oppure ≥3 foto/clip per montare il Reel.":"Carica almeno 1 foto reale per procedere."));
   }
   else if(c.step==="anteprima"){
-    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Slide 1 = la tua foto con hook. Le slide 2–4 vengono generate da n8n a partire dall\'intervista — non dall\'articolo blog. L\'anteprima mostra la struttura con frammenti delle tue risposte."));
+    panel.append(el("h2",{},"Anteprima realistica"),el("p",{class:"pd"},"Slide 1 = la tua foto con l\'hook che hai scelto. Le slide 2–4 le genera n8n: parte dalle tue risposte all\'intervista se la riga ne ha una collegata, altrimenti ripiega sul testo dell\'articolo. L\'anteprima mostra la struttura con frammenti delle tue risposte."));
     // Carousel: slide 1 = foto reale + titolo, slide 2-N = testo, ultima = CTA
     const antSlides=buildCarouselSlides(c);
     if(antSlides.length){
@@ -1259,7 +1259,9 @@ async function genHooks(){
   if(!c.tema.trim()){toast("Scrivi prima il tema nel primo step.","warn");return;}
   c.generating=true;render();
   try{
-    const r=await api("redazione-genera-hook",{tema:c.tema,pilastro:c.pilastro,caption_preview:c.caption_ig||""});
+    const r=await api("redazione-genera-hook",{tema:c.tema,pilastro:c.pilastro,caption_preview:c.caption_ig||"",
+      testo_blog:c.testo_blog||"",
+      intervista:{domande:c.intervista.domande,risposte:c.intervista.risposte}});
     if(!r.ok||!r.hooks){toast(r.errore||"Generazione hook fallita.","err");}
     else{c.hooks=r.hooks;c.hookScelto=null;c.dirty=true;toast("4 varianti generate.","ok");}
   }catch(e){toast("Errore: "+e.message,"err");}
@@ -1448,7 +1450,8 @@ function composerToRow(stato){
     titolo:c.titolo||c.tema,tema:c.tema,
     caption_ig:c.caption_ig,testo_blog:c.testo_blog,url_foto:c.foto.join(","),url_video:c.url_video,
     stato,id_intervista:c.id_intervista,richiedi_ok_esplicito:c.richiedi_ok?"true":"false",
-    geotag:c.geotag,note:c.brief_foto,cta:c.cta_applicata?"valutatore":""};
+    geotag:c.geotag,note:c.brief_foto,cta:c.cta_applicata?"valutatore":"",
+    hook:c.hookScelto&&c.hookScelto.testo?c.hookScelto.testo:""};
 }
 async function saveDraft(){
   const c=S.composer;if(!c)return;
