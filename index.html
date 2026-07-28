@@ -377,7 +377,7 @@ const DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
 const S = {
   key:null, ready:false, view:"calendario", loading:true,
-  data:{calendario:[], idee:[], config:{}, immobili:[], metriche:null},
+  data:{calendario:[], idee:[], config:{}, metriche:null},
   calMode:"mese", calMonth:new Date(2026,6,1),
   composer:null,           // stato composer attivo
   batch:null,              // stato modalità batch
@@ -483,7 +483,6 @@ async function loadAll(){
   S.data.calendario=(res.calendario||[]).map(normSlot);
   S.data.idee=res.idee||[];
   S.data.config=res.config||{};
-  S.data.immobili=res.immobili||[];
   S.loading=false;
 }
 function normSlot(r){r.stato=r.stato||"vuoto";return r;}
@@ -1816,7 +1815,7 @@ function SettingsView(){
   // Chiave
   const kp=el("div",{class:"panel"});
   kp.append(el("h2",{},"🔐 Sessione"),el("p",{class:"pd"},"La chiave resta solo in memoria. Uscendo o ricaricando dovrai reinserirla."));
-  kp.append(el("button",{class:"btn btn-g",onclick:()=>{S.key=null;S.ready=false;S.data={calendario:[],idee:[],config:{},immobili:[],metriche:null};render();}},"Esci dalla sessione"));
+  kp.append(el("button",{class:"btn btn-g",onclick:()=>{S.key=null;S.ready=false;S.data={calendario:[],idee:[],config:{},metriche:null};render();}},"Esci dalla sessione"));
   frag.append(kp);
   return frag;
 }
