@@ -405,8 +405,23 @@ async function api(path,body,{method="POST"}={}){
   const ct=r.headers.get("content-type")||"";
   return ct.includes("json")?r.json():r.text();
 }
+function misuraFoto(file){
+  return new Promise(res=>{
+    const url=URL.createObjectURL(file);const i=new Image();
+    i.onload=()=>{res({w:i.naturalWidth,h:i.naturalHeight});URL.revokeObjectURL(url);};
+    i.onerror=()=>{res(null);URL.revokeObjectURL(url);};
+    i.src=url;
+  });
+}
 async function uploadFoto(file){
   const rt=file.type.startsWith("video/")?"video":"image";
+  // La prima slide è la foto vera: sotto i 1080px di lato Instagram la mostra molle
+  if(rt==="image"){
+    const d=await misuraFoto(file);
+    if(d&&Math.min(d.w,d.h)<1080){
+      toast("Foto piccola ("+d.w+"×"+d.h+" px). Instagram vuole almeno 1080 di lato: carica l'originale dalla galleria, non una copia arrivata da WhatsApp o salvata dal web.","warn",9000);
+    }
+  }
   const fd=new FormData();
   fd.append("file",file,file.name||(rt==="video"?"media.mp4":"foto.jpg"));
   fd.append("upload_preset","edilnordre");
