@@ -179,6 +179,12 @@ a{color:var(--sage-ink)}
 .idea.idea-dev h3{font-size:15px}
 .idea.idea-dev .inp{resize:vertical;min-height:56px;font-size:13px;padding:8px 10px;width:100%}
 .dev-section-title{font-size:15px;font-weight:700;color:var(--ink-2);margin:30px 0 14px;padding-bottom:9px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.idee-group-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:30px 0 14px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.phead+.idee-group-title{margin-top:6px}
+.idee-group-title .gdot{width:9px;height:9px;border-radius:3px;flex:none}
+.idee-group-title .gname{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.02em;text-transform:uppercase;font-size:19px;line-height:1}
+.idee-group-title .gperc{font-size:12.5px;color:var(--muted)}
+.idee-group-title .gcount{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 
 /* ---------- Composer ---------- */
 .composer{display:grid;grid-template-columns:1fr;gap:0}
@@ -366,12 +372,15 @@ const API = "https://n8n.edilnordre.it/webhook";
 const IG_USER = "edilnordre";
 const LOGO = "https://edilnordre.it/wp-content/uploads/2025/02/cropped-favicon-logo-tondo-270x270.webp";
 const PILLARS = {
-  territorio:{label:"Territorio",emoji:"🏘️",perc:"conosce il paese"},
-  dati:{label:"Dati",emoji:"📊",perc:"sa i numeri"},
-  reale:{label:"Vetrina",emoji:"🏠",perc:"vende davvero"},
-  reel:{label:"Reel",emoji:"🎬",perc:"raggiunge chi non ti segue"},
-  esterno:{label:"Esterno",emoji:"📌",perc:""}
+  territorio:{label:"Territorio",emoji:"🏘️",perc:"conosce il paese",color:"var(--terr)"},
+  dati:{label:"Dati",emoji:"📊",perc:"sa i numeri",color:"var(--dati)"},
+  reale:{label:"Vetrina",emoji:"🏠",perc:"vende davvero",color:"var(--reale)"},
+  reel:{label:"Reel",emoji:"🎬",perc:"raggiunge chi non ti segue",color:"var(--reel)"},
+  esterno:{label:"Esterno",emoji:"📌",perc:"",color:"var(--line-2)"}
 };
+// Pilastri su cui l'agente propone idee: i reel non sono piu un formato
+// editoriale, quindi ogni proposta e territorio, dati o vetrina.
+const PILASTRI_IDEE=["territorio","dati","reale"];
 const MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
@@ -481,11 +490,29 @@ async function loadAll(){
   S.loading=true;
   const res=await api("redazione-carica-dati",{});
   S.data.calendario=(res.calendario||[]).map(normSlot);
-  S.data.idee=res.idee||[];
+  S.data.idee=(res.idee||[]).map(normIdea);
   S.data.config=res.config||{};
   S.loading=false;
 }
 function normSlot(r){r.stato=r.stato||"vuoto";return r;}
+// I reel non esistono piu come formato editoriale. Le idee che arrivano
+// marcate reel (o con un pilastro che non riconosciamo, tipo "notizie")
+// diventano proposte normali: dati se il tema e numerico, altrimenti
+// territorio. Il prefisso "Reel:" nel titolo va via, non vuol dire piu nulla.
+function normIdea(r){
+  if(!PILASTRI_IDEE.includes(r.pilastro))r.pilastro=pilastroDiRipiego(r);
+  if(r.formato==="reel")r.formato=r.pilastro==="dati"?"articolo_blog":"post_ig";
+  if(r.titolo)r.titolo=senzaPrefissoReel(r.titolo);
+  return r;
+}
+function senzaPrefissoReel(s){return String(s||"").replace(/^\s*reel\s*[:\-–]\s*/i,"");}
+// Gli slot già programmati possono avere nel tema il vecchio prefisso "Reel:":
+// confronto i titoli ripuliti, altrimenti un'idea in sviluppo perde il suo slot.
+function stessoTema(a,b){const k=senzaPrefissoReel(a).trim().toLowerCase();return k!==""&&k===senzaPrefissoReel(b).trim().toLowerCase();}
+function pilastroDiRipiego(r){
+  const txt=[r.titolo,r.angolo_locale,r.domanda_lettore].join(" ").toLowerCase();
+  return /prezz|\bmq\b|numer|dati|statis|tempi di vendita|venduti|percentual|€/.test(txt)?"dati":"territorio";
+}
 
 /* ---------- Shell ---------- */
 function Shell(){
@@ -701,29 +728,15 @@ function IdeeView(){
   if(!nuove.length){
     frag.append(emptyState("💡","Nessuna idea in attesa","Usa \"Genera idee ora\" per riempire in blocco, oppure aspetta la proposta del lunedì mattina."));
   }else{
-    const grid=el("div",{class:"idea-grid"});
-    nuove.forEach(i=>{
-      const p=PILLARS[i.pilastro]||PILLARS.territorio;
-      const score=parseInt(i.punteggio)||0;
-      const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
-      grid.append(el("div",{class:"idea"},
-        el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
-          score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
-        el("h3",{},i.titolo),
-        i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
-        (i.angolo_locale||i.luogo)?el("div",{class:"angle"},"📍 "+(i.angolo_locale||i.luogo)):null,
-        i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
-        i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
-        domande.length?el("details",{class:"domande"},
-          el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
-          el("ol",{},...domande.map(d=>el("li",{},d)))
-        ):null,
-        el("div",{class:"ia"},
-          el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"✓ Sviluppa"),
-          el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
-      ));
+    // Le proposte arrivano mescolate: le raggruppo per pilastro (prima tutto
+    // il territorio, poi tutti i dati, poi la vetrina) così si scelgono
+    // confrontando proposte che costruiscono la stessa percezione.
+    gruppiPerPilastro(nuove).forEach(([k,list])=>{
+      frag.append(gruppoTitolo(k,list.length));
+      const grid=el("div",{class:"idea-grid"});
+      list.forEach(i=>grid.append(ideaCard(i)));
+      frag.append(grid);
     });
-    frag.append(grid);
   }
   const accettate=S.data.idee.filter(i=>i.stato==="accettata");
   if(accettate.length){
@@ -732,7 +745,7 @@ function IdeeView(){
     accettate.forEach(i=>{
       const p=PILLARS[i.pilastro]||PILLARS.territorio;
       const score=parseInt(i.punteggio)||0;
-      const slotAssociato=(S.data.calendario||[]).find(s=>s.tema===i.titolo&&s.stato!=="scartato");
+      const slotAssociato=(S.data.calendario||[]).find(s=>stessoTema(s.tema,i.titolo)&&s.stato!=="scartato");
       const dataSlot=slotAssociato?slotAssociato.data:"";
       const ta=el("textarea",{class:"inp",rows:"2",placeholder:"Aggiorna lo stato… es. “5 ago: testo pronto, aspetto foto”"});
       ta.value=i.nota_sviluppo||"";
@@ -750,7 +763,7 @@ function IdeeView(){
             try{await api("redazione-salva-idea",{idea:i});toast("Nota salvata.","ok");}
             catch(e){toast("Errore: "+e.message,"err");}
           }},"💾 Salva nota"),
-          el("button",{class:"btn btn-g btn-sm",onclick:()=>{const s=slotAssociato||findFreeSlot(i.pilastro,i.pilastro==="reel"?"reel":"entrambi");if(s)startComposer(s,{idea:i});else pickSlotThenCompose({idea:i});}},"✎ Riapri"))
+          el("button",{class:"btn btn-g btn-sm",onclick:()=>{const s=slotAssociato||findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));if(s)startComposer(s,{idea:i});else pickSlotThenCompose({idea:i});}},"✎ Riapri"))
       ));
     });
     frag.append(devGrid);
@@ -777,9 +790,48 @@ function IdeeView(){
   // ────────────────────────────────────────────────────────────
   return frag;
 }
+// Ordina i gruppi come il piano editoriale: territorio, dati, vetrina.
+function gruppiPerPilastro(idee){
+  const g=new Map();
+  idee.forEach(i=>{
+    const k=PILLARS[i.pilastro]?i.pilastro:"territorio";
+    if(!g.has(k))g.set(k,[]);
+    g.get(k).push(i);
+  });
+  const coda=[...g.keys()].filter(k=>!PILASTRI_IDEE.includes(k));
+  return [...PILASTRI_IDEE,...coda].filter(k=>g.has(k)).map(k=>[k,g.get(k)]);
+}
+function gruppoTitolo(k,n){
+  const p=PILLARS[k]||PILLARS.territorio;
+  return el("div",{class:"idee-group-title"},
+    el("span",{class:"gdot",style:"background:"+p.color}),
+    el("span",{class:"gname"},p.emoji+" Proposte "+p.label),
+    p.perc?el("span",{class:"gperc"},"— "+p.perc):null,
+    el("span",{class:"gcount"},n+(n===1?" proposta":" proposte")));
+}
+function ideaCard(i){
+  const p=PILLARS[i.pilastro]||PILLARS.territorio;
+  const score=parseInt(i.punteggio)||0;
+  const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
+  return el("div",{class:"idea"},
+    el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+      score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
+    el("h3",{},i.titolo),
+    i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
+    (i.angolo_locale||i.luogo)?el("div",{class:"angle"},"📍 "+(i.angolo_locale||i.luogo)):null,
+    i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
+    i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
+    domande.length?el("details",{class:"domande"},
+      el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
+      el("ol",{},...domande.map(d=>el("li",{},d)))
+    ):null,
+    el("div",{class:"ia"},
+      el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"✓ Sviluppa"),
+      el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
+  );
+}
 async function accettaIdea(i){
-  const tipo=i.pilastro==="reel"?"reel":"entrambi";
-  const slot=findFreeSlot(i.pilastro,tipo);
+  const slot=findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));
   if(!slot){toast("Nessuno slot libero per pilastro \""+i.pilastro+"\". Aggiungi uno slot dal calendario prima di sviluppare questa idea.","warn",7000);return;}
   i.stato="accettata";
   try{await api("redazione-salva-idea",{idea:i});}catch(e){}
@@ -838,7 +890,7 @@ function openGeneraIdee(){
   const inpN=el("input",{class:"inp",type:"number",min:"1",max:"20",value:"8",oninput:e=>n=+e.target.value});
   const selP=el("select",{class:"sel",onchange:e=>pil=e.target.value},
     el("option",{value:""},"Tutti i pilastri"),
-    ...["territorio","dati","reale","reel"].map(p=>el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label)));
+    ...PILASTRI_IDEE.map(p=>el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label)));
   modalCustom("Genera idee ora","Riempi in blocco i periodi di chiusura. L'agente lavora in background: le idee compaiono qui man mano.",
     [el("div",{class:"field"},el("label",{},"Quante idee (max 20)"),inpN),
      el("div",{class:"field"},el("label",{},"Pilastro"),selP)],
@@ -854,7 +906,7 @@ async function pollIdee(times){
   // l'agente è asincrono: ricarico qualche volta
   const before=S.data.idee.filter(i=>i.stato==="nuova").length;
   let n=0;const iv=setInterval(async()=>{
-    n++;try{const res=await api("redazione-carica-dati",{});S.data.idee=res.idee||[];}catch(e){}
+    n++;try{const res=await api("redazione-carica-dati",{});S.data.idee=(res.idee||[]).map(normIdea);}catch(e){}
     const now=S.data.idee.filter(i=>i.stato==="nuova").length;
     if(now>before){clearInterval(iv);if(S.view==="idee")render();toast((now-before)+" nuove idee pronte.","ok");}
     else if(n>=times){clearInterval(iv);if(S.view==="idee")render();toast("Idee in arrivo: ricarica tra poco se non le vedi.","warn");}
