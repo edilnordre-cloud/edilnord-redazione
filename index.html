@@ -468,6 +468,19 @@ table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);ou
 .m-next .tx{font-size:13px;color:var(--ink-2);line-height:1.4;min-width:0}
 .m-next .tx b{color:var(--ink)}
 
+/* --- batch telefono: una scheda per contenuto --- */
+.m-ball{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink-2);
+  padding:4px 2px 12px}
+.m-ball input{width:22px;height:22px;flex:none}
+.m-bcard{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-1);
+  padding:14px;margin-bottom:11px;display:flex;flex-direction:column;gap:9px}
+.m-bcard.nofoto{background:var(--warn-soft);box-shadow:none;border:1px solid #ead9b4}
+.m-bcard .h{display:flex;gap:10px;align-items:center}
+.m-bcard .h input[type=checkbox]{width:22px;height:22px;flex:none}
+.m-bcard .h .tin{flex:1;min-width:0}
+.m-bcard .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.m-bcard .btn{width:100%}
+
 /* --- composer telefono --- */
 .m-cbar{position:sticky;top:0;z-index:var(--z-header);background:var(--green);color:#fff;
   padding:calc(env(safe-area-inset-top) + 12px) 14px 14px}
@@ -513,6 +526,11 @@ table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);ou
   .m-app .cbar.m-stick .btn:last-child{flex:1}
   .m-app .cbar.m-stick>span:empty{display:none}
   .m-app .m-shots .btn{min-height:52px}
+  .m-app .tin{font-size:16px;min-height:46px;width:100%}
+  .m-app textarea.tin{min-height:96px}
+  .m-app .bulkbar{padding:13px 14px}
+  .m-app .bulkbar .bc{width:100%;margin-bottom:4px}
+  .m-app .bulkbar .btn{flex:1 1 calc(50% - 5px)}
 }
 </style>
 </head>
@@ -2092,7 +2110,7 @@ function BatchView(){
   ));
   if(!S.batch)return frag.append(batchSetup()),frag;
   if(S.batch.phase==="intervista")return frag.append(batchIntervista()),frag;
-  return frag.append(batchTable()),frag;
+  return frag.append(isMobile()?batchCards():batchTable()),frag;
 }
 function batchSetup(){
   const b={tema:"",n:4};
@@ -2143,6 +2161,63 @@ async function batchGenera(){
     b.phase="table";
   }catch(e){prog.remove();toast("Errore: "+e.message,"err");}
   b.generating=false;render();
+}
+/* Sul telefono la tabella diventa una scheda per contenuto: stessi campi,
+   stesse azioni in blocco, ma senza scorrimento orizzontale. */
+function batchCards(){
+  const b=S.batch;const frag=el("div",{});
+  frag.append(batchBulkBar());
+  const tutti=b.rows.every(r=>r.sel);
+  frag.append(el("label",{class:"m-ball"},
+    (()=>{const cb=el("input",{type:"checkbox"});cb.checked=tutti;
+      cb.onchange=e=>{b.rows.forEach(r=>r.sel=e.target.checked);render();};return cb;})(),
+    tutti?"Togli la selezione":"Seleziona tutti"));
+  b.rows.forEach(r=>{
+    const hasFoto=r.tipo==="reel"?(r.url_video||r.foto.length>=3):r.foto.length>0;
+    const card=el("div",{class:"m-bcard"+(hasFoto?"":" nofoto")});
+    const tin=el("input",{class:"tin",value:r.titolo,style:"font-weight:700"});
+    tin.oninput=e=>r.titolo=e.target.value;
+    card.append(el("div",{class:"h"},
+      (()=>{const cb=el("input",{type:"checkbox"});cb.checked=r.sel;cb.onchange=e=>{r.sel=e.target.checked;render();};return cb;})(),
+      tin));
+    const selPil=el("select",{class:"tin"},...["territorio","dati","reale","reel"].map(p=>{
+      const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label);if(r.pilastro===p)o.selected=true;return o;}));
+    selPil.onchange=e=>r.pilastro=e.target.value;
+    const selTipo=el("select",{class:"tin"},...[["entrambi","Blog+IG"],["reel","Reel"]].map(([v,l])=>{
+      const o=el("option",{value:v},l);if(r.tipo===v)o.selected=true;return o;}));
+    selTipo.onchange=e=>r.tipo=e.target.value;
+    card.append(el("div",{class:"two"},selPil,selTipo));
+    const ta=el("textarea",{class:"tin",style:"min-height:96px;resize:vertical"});
+    ta.value=r.caption_ig;ta.oninput=e=>r.caption_ig=e.target.value;
+    card.append(ta);
+    // media: un solo pulsante, il telefono chiede da solo fotocamera o galleria
+    const fin=el("input",{type:"file",accept:r.tipo==="reel"?"video/*,image/*":"image/*",multiple:true,style:"display:none"});
+    const btnFoto=el("button",{class:"btn "+(hasFoto?"btn-g":"btn-p")+" btn-sm",onclick:()=>fin.click()},
+      hasFoto?("✓ "+(r.url_video?"video caricato":r.foto.length+(r.foto.length===1?" foto":" foto"))):"📷 Aggiungi foto");
+    fin.onchange=async e=>{
+      const files=[...e.target.files];e.target.value="";
+      btnFoto.disabled=true;btnFoto.textContent="Carico…";
+      try{for(const f of files){const res=await uploadFoto(f);if(f.type.startsWith("video"))r.url_video=res.url;else r.foto.push(res.url);}render();}
+      catch(err){toast("Upload: "+err.message,"err");render();}
+    };
+    const inpData=el("input",{class:"tin",type:"date",value:r.data});inpData.oninput=e=>r.data=e.target.value;
+    const inpOra=el("input",{class:"tin",type:"time",value:r.ora});inpOra.oninput=e=>r.ora=e.target.value;
+    card.append(fin,btnFoto,el("div",{class:"two"},inpData,inpOra));
+    frag.append(card);
+  });
+  frag.append(el("div",{class:"gate-warn",style:"margin-top:14px"},"📷",
+    "Le schede in giallo non hanno foto: restano in bozza, non diventano \"pronto\" finché non ne carichi una."));
+  return frag;
+}
+function batchBulkBar(){
+  const b=S.batch;const sel=b.rows.filter(r=>r.sel);
+  return el("div",{class:"bulkbar"},
+    el("span",{class:"bc"},b.rows.length+" contenuti · "+sel.length+" selezionati"),
+    el("button",{class:"btn btn-g btn-sm",onclick:()=>{distribuisci();}},"📅 Distribuisci sugli slot"),
+    el("button",{class:"btn btn-g btn-sm",onclick:()=>bulkSave("bozza",sel.length?sel:b.rows)},"💾 Salva tutti in bozza"),
+    el("button",{class:"btn btn-p btn-sm",onclick:()=>bulkReady(sel.length?sel:b.rows)},"✓ Marca pronti"),
+    sel.length?el("button",{class:"btn btn-danger btn-sm",onclick:()=>{b.rows=b.rows.filter(r=>!r.sel);render();}},"Elimina selezionati"):null
+  );
 }
 function batchTable(){
   const b=S.batch;const frag=el("div",{});
