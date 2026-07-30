@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
+  --green:#142619;  /* verde del logo — testata della versione telefono */
   --sage:#9DC0AA; --sage-ink:#3f6b52; --sage-soft:#e7f0ea;
   --bg:#f0efeb; --surface:#ffffff; --surface-2:#f7f6f2;
   --ink:#1d1d1b; --ink-2:#48473f; --muted:#67655c; --line:#e2e0d8; --line-2:#d3d0c6;
@@ -355,6 +356,164 @@ table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);ou
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* ============================================================
+   VERSIONE TELEFONO — shell dedicata (<=760px).
+   Niente barra in basso: la navigazione sta nella testata verde,
+   dietro il pulsante menu. Il verde e quello del logo (#142619).
+   ============================================================ */
+.m-app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;background:var(--bg)}
+.m-top{position:sticky;top:0;z-index:var(--z-header);background:var(--green);color:#fff;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 14px;box-shadow:0 2px 10px rgba(20,38,25,.18)}
+.m-top .r1{display:flex;align-items:center;gap:11px;min-height:34px}
+.m-top .logo{width:30px;height:30px;border-radius:8px;flex:none;background:#fff;object-fit:cover}
+.m-top .wm{font-family:'Anton',sans-serif;font-size:13.5px;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.m-top .acts{margin-left:auto;display:flex;gap:8px}
+.m-ib{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;color:#fff;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);position:relative;transition:background .15s var(--e-out)}
+.m-ib:active{background:rgba(255,255,255,.2)}
+.m-ib .bdg{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;
+  min-width:18px;height:18px;padding:0 5px;border-radius:9px;display:grid;place-items:center;border:2px solid var(--green)}
+.m-top h1{font-family:'Anton',sans-serif;font-weight:400;font-size:31px;line-height:1;text-transform:uppercase;
+  letter-spacing:.01em;margin-top:13px;color:#fff}
+.m-top .sub{font-size:12.5px;color:rgba(255,255,255,.72);margin-top:7px;line-height:1.45}
+.m-top .pill{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;padding:5px 9px;border-radius:100px}
+.m-top .pill.dry{background:rgba(246,236,213,.18);color:#f0d9a4}
+.m-top .pill.live{background:rgba(157,192,170,.18);color:var(--sage)}
+.m-top .pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.m-main{flex:1;min-width:0;padding:18px 16px calc(env(safe-area-inset-bottom) + 34px)}
+
+/* --- menu a tutta pagina --- */
+.m-menu{position:fixed;inset:0;z-index:var(--z-modal);background:var(--green);color:#fff;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 20px);animation:mfade .22s var(--e-out)}
+@keyframes mfade{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.m-menu .mh{display:flex;align-items:center;gap:11px;margin-bottom:22px}
+.m-menu .mh .t{font-family:'Anton',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.02em}
+.m-menu nav{display:flex;flex-direction:column;gap:3px;flex:1;overflow-y:auto;margin:0 -6px}
+.m-menu nav button{display:flex;align-items:center;gap:14px;padding:15px 12px;border-radius:14px;color:rgba(255,255,255,.88);
+  font-weight:600;font-size:17px;text-align:left;width:100%}
+.m-menu nav button .ic{font-size:21px;width:26px;text-align:center;flex:none}
+.m-menu nav button.on{background:rgba(157,192,170,.16);color:var(--sage)}
+.m-menu nav button:active{background:rgba(255,255,255,.09)}
+.m-menu nav button .bdg{margin-left:auto;background:var(--danger);color:#fff;font-size:12px;font-weight:700;
+  min-width:22px;height:22px;padding:0 6px;border-radius:11px;display:grid;place-items:center}
+.m-menu .mf{border-top:1px solid rgba(255,255,255,.12);padding-top:14px;margin-top:10px;display:flex;flex-direction:column;gap:12px}
+.m-menu .mf .note{font-size:11.5px;color:rgba(255,255,255,.62);line-height:1.5}
+.m-menu .mf .note b{color:rgba(255,255,255,.78)}
+
+/* --- sezioni home --- */
+.m-sec{display:flex;align-items:baseline;gap:8px;margin:26px 2px 11px}
+.m-sec:first-child{margin-top:2px}
+.m-sec h2{font-size:14px;font-weight:700;color:var(--ink)}
+.m-sec .c{font-size:12px;color:var(--muted)}
+.m-sec .more{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--sage-ink)}
+
+/* --- card "riprendi" --- */
+.m-wip{background:var(--green);color:#fff;border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow-2)}
+.m-wip .t{display:flex;align-items:center;gap:8px}
+.m-wip .t .chip{background:rgba(157,192,170,.18);color:var(--sage)}
+.m-wip .t .when{margin-left:auto;font-size:11.5px;color:rgba(255,255,255,.62);font-weight:600;white-space:nowrap}
+.m-wip h3{font-size:17px;font-weight:700;line-height:1.3;margin-top:11px;color:#fff;text-wrap:balance}
+.m-steps{display:flex;align-items:center;gap:4px;margin-top:15px}
+.m-steps .s{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.m-steps .s .b{width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.16)}
+.m-steps .s.done .b{background:var(--sage)}
+.m-steps .s.now .b{background:#fff}
+.m-steps .s span{font-size:9.5px;font-weight:600;color:rgba(255,255,255,.62);letter-spacing:.01em;white-space:nowrap}
+.m-steps .s.now span{color:#fff}
+.m-steps .s.done span{color:var(--sage)}
+.m-wip .miss{font-size:12.5px;color:#f3d9a8;display:flex;gap:7px;align-items:flex-start;margin-top:13px;line-height:1.4}
+.m-wip .go{display:flex;gap:10px;margin-top:15px}
+.m-wip .go .btn{flex:1;min-height:46px}
+.m-wip .go .btn-ghost{background:rgba(255,255,255,.12);color:#fff}
+.m-wip .go .btn-ghost:active{background:rgba(255,255,255,.2)}
+.m-mini{background:var(--surface);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow-1);
+  display:flex;align-items:center;gap:12px;margin-top:9px}
+.m-mini .ring{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative}
+.m-mini .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--surface)}
+.m-mini .ring b{position:relative;z-index:1;font-size:10.5px;font-weight:700;color:var(--ink-2)}
+.m-mini .tx{min-width:0;flex:1}
+.m-mini .tx .h{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-mini .tx .s{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* --- idee in fila --- */
+.m-hcards{display:flex;gap:11px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 6px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.m-hcards::-webkit-scrollbar{display:none}
+.m-hcard{flex:0 0 272px;scroll-snap-align:start;background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow-1);padding:15px 15px 13px;display:flex;flex-direction:column}
+.m-hcard h3{font-size:16px;font-weight:700;line-height:1.28;margin-top:10px;color:var(--ink);text-wrap:balance}
+.m-hcard .q{font-size:13px;color:var(--ink-2);font-style:italic;margin-top:8px;line-height:1.42}
+.m-hcard .where{font-size:12px;color:var(--muted);margin-top:9px;display:flex;gap:5px}
+.m-hcard .acts{display:flex;gap:8px;margin-top:auto;padding-top:14px}
+.m-hcard .acts .btn{flex:1}
+.m-hcard .acts .btn.no{flex:0 0 46px;padding:0}
+.m-icard{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-1);padding:15px 16px;margin-bottom:10px}
+.m-icard .top{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.m-icard h3{font-size:16.5px;font-weight:700;line-height:1.28;color:var(--ink);text-wrap:balance}
+.m-icard .q{font-size:13.5px;color:var(--ink-2);font-style:italic;margin-top:8px;line-height:1.45}
+.m-icard .where{font-size:12.5px;color:var(--muted);margin-top:9px;display:flex;gap:6px;line-height:1.4}
+.m-icard .acts{display:flex;gap:9px;margin-top:14px}
+.m-icard .acts .btn{flex:1}
+.m-icard .acts .btn.no{flex:0 0 52px;padding:0}
+.m-icard details{margin-top:11px}
+.m-icard details summary{font-size:12.5px;color:var(--sage-ink);font-weight:600;cursor:pointer;list-style:none}
+.m-icard details ol{margin:9px 0 0 17px;display:flex;flex-direction:column;gap:7px}
+.m-icard details li{font-size:13px;color:var(--ink-2);line-height:1.42}
+.m-next{display:flex;align-items:center;gap:11px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);padding:13px 15px;margin-top:10px}
+.m-next .d{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:.08em;padding:6px 9px;border-radius:7px;
+  text-transform:uppercase;white-space:nowrap}
+.m-next .tx{font-size:13px;color:var(--ink-2);line-height:1.4;min-width:0}
+.m-next .tx b{color:var(--ink)}
+
+/* --- composer telefono --- */
+.m-cbar{position:sticky;top:0;z-index:var(--z-header);background:var(--green);color:#fff;
+  padding:calc(env(safe-area-inset-top) + 12px) 14px 14px}
+.m-cbar .r{display:flex;align-items:center;gap:12px}
+.m-cbar .ti{font-size:13px;font-weight:600;color:rgba(255,255,255,.78);min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;flex:1}
+.m-cbar .sv{font-size:12.5px;font-weight:700;color:var(--sage);padding:8px 4px;white-space:nowrap}
+.m-cbar .sv.clean{color:rgba(255,255,255,.45)}
+.m-cbar .line{display:flex;gap:4px;margin-top:14px}
+.m-cbar .line i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.17)}
+.m-cbar .line i.done{background:var(--sage)}
+.m-cbar .line i.now{background:#fff}
+.m-cbar .lbl{display:flex;align-items:baseline;gap:8px;margin-top:11px}
+.m-cbar .lbl h2{font-family:'Anton',sans-serif;font-weight:400;font-size:23px;text-transform:uppercase;letter-spacing:.01em}
+.m-cbar .lbl .n{font-size:11.5px;color:rgba(255,255,255,.55);font-weight:600;margin-left:auto;white-space:nowrap}
+.m-shots{display:flex;gap:10px;margin:12px 0 4px}
+.m-shots .btn{flex:1;min-height:50px}
+.m-shots .btn.cam{flex:1.35}
+.m-stick{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);margin:18px -16px calc(env(safe-area-inset-bottom) * -1 - 34px);
+  padding:12px 16px calc(env(safe-area-inset-bottom) + 14px);display:flex;gap:10px;z-index:60}
+.m-stick .btn{min-height:48px}
+.m-stick .btn.next{flex:1}
+
+@media(max-width:760px){
+  body{font-size:15.5px}
+  .m-app .phead{display:none}
+  .m-app .panel{padding:0;background:none;border:none;box-shadow:none}
+  .m-app .cwrap{display:block}
+  .m-app .ta{min-height:120px;font-size:16px}
+  .m-app .inp,.m-app .sel{font-size:16px;min-height:48px}
+  .m-app .btn{min-height:46px}
+  .m-app .qcard{padding:15px}
+  .m-app .thumbs{grid-template-columns:repeat(3,1fr)}
+  .m-app .idea-grid,.m-app .cal-grid,.m-app .clist{max-width:100%}
+  .m-app .tbl-wrap{overflow-x:auto}
+  .m-app .cbar{flex-direction:column-reverse;gap:10px;align-items:stretch}
+  .m-app .cbar .btn{width:100%}
+  .m-app .card{flex-wrap:wrap}
+  /* la riga d'azione dello step resta agganciata in basso mentre scorri */
+  .m-app .cbar.m-stick{flex-direction:row;align-items:center;gap:10px}
+  .m-app .cbar.m-stick .btn{width:auto}
+  .m-app .cbar.m-stick .btn:last-child{flex:1}
+  .m-app .cbar.m-stick>span:empty{display:none}
+  .m-app .m-shots .btn{min-height:52px}
+}
 </style>
 </head>
 <body>
@@ -391,8 +550,29 @@ const S = {
   composer:null,           // stato composer attivo
   batch:null,              // stato modalità batch
   spesaChecked:{},
-  busy:false
+  busy:false,
+  mMenu:false,             // menu a tutta pagina (solo telefono)
+  mIdeeElenco:false        // idee in elenco invece che in fila
 };
+
+/* Versione telefono: shell dedicata sotto i 760px. Sul telefono si parte
+   dalle Idee, non dal calendario: il lavoro parte sempre da una proposta. */
+const MQ_MOBILE=window.matchMedia("(max-width:760px)");
+const isMobile=()=>MQ_MOBILE.matches;
+if(isMobile()){S.view="idee";S.calMode="lista";}
+let _eraMobile=isMobile();
+function cambioFormato(){
+  if(isMobile()===_eraMobile)return;
+  _eraMobile=isMobile();
+  S.mMenu=false;
+  if(isMobile()&&S.calMode==="mese")S.calMode="lista";
+  if(S.ready)render();
+}
+MQ_MOBILE.addEventListener("change",cambioFormato);
+// Non tutti i browser mandano l'evento della media query (e la rotazione del
+// telefono a volte arriva solo come resize): controllo anche di la.
+let _rzT=null;
+window.addEventListener("resize",()=>{clearTimeout(_rzT);_rzT=setTimeout(cambioFormato,150);});
 
 /* ---------- utils ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -516,6 +696,7 @@ function pilastroDiRipiego(r){
 
 /* ---------- Shell ---------- */
 function Shell(){
+  if(isMobile())return MobileShell();
   const app=el("div",{class:"app"});
   const ideeNew=S.data.idee.filter(i=>i.stato==="nuova").length;
   const bozzeCount=S.data.calendario.filter(s=>s.stato==="bozza"&&s.tipo!=="esterno").length;
@@ -552,6 +733,7 @@ function dryPill(){
 }
 function views(){
   if(S.loading)return el("div",{class:"loading"},el("span",{class:"sp"}),"Carico la redazione…");
+  if(isMobile()&&S.view==="idee")return MobileIdeeHome();
   switch(S.view){
     case"calendario":return CalendarView();
     case"bozze":return BozzeView();
@@ -562,6 +744,313 @@ function views(){
     case"andamento":return AndamentoView();
     case"impostazioni":return SettingsView();
   }
+}
+
+/* ============================================================ TELEFONO
+   Shell dedicata: testata verde con menu (niente barra in basso), home
+   sulle Idee, e da li tutto il processo fino al contenuto pronto.
+   ============================================================ */
+const M_TITOLI={idee:"Idee",bozze:"In lavoro",calendario:"Piano",composer:"Composer",
+  batch:"Batch",spesa:"Lista spesa",andamento:"Andamento",impostazioni:"Impostazioni"};
+const M_SOTTO={
+  bozze:"Contenuti iniziati e non ancora pronti. Riaprili per finirli.",
+  calendario:"Lun territorio · Mer dati · Ven vetrina.",
+  batch:"Un tema, tanti contenuti. Meglio da PC.",
+  spesa:"Cosa serve fotografare o chiedere.",
+  andamento:"Come sta andando il piano.",
+  impostazioni:"Chiavi, vacanza, pubblicazione."
+};
+const M_VOCI=[
+  ["idee","💡","Idee"],["bozze","🔨","In lavoro"],["calendario","🗓️","Piano"],
+  ["composer","✍️","Nuovo contenuto"],["batch","🗂️","Batch"],["spesa","🛒","Lista spesa"],
+  ["andamento","📈","Andamento"],["impostazioni","⚙️","Impostazioni"]
+];
+function ideeNuove(){return S.data.idee.filter(i=>i.stato==="nuova");}
+function inLavorazione(){
+  return S.data.calendario.filter(s=>s.stato==="bozza"&&s.tipo!=="esterno")
+    .sort((a,b)=>String(a.data||"9999").localeCompare(String(b.data||"9999")));
+}
+function MobileShell(){
+  const app=el("div",{class:"m-app"});
+  app.append((S.view==="composer"&&S.composer)?mComposerBar():mTopBar());
+  app.append(el("main",{class:"m-main"},views()));
+  if(S.mMenu)app.append(mMenu());
+  return app;
+}
+function mTopBar(){
+  const dry=isDry();
+  const nuove=ideeNuove().length;
+  const bozze=inLavorazione().length;
+  const bar=el("header",{class:"m-top"});
+  bar.append(el("div",{class:"r1"},
+    el("img",{class:"logo",src:LOGO,alt:"Edilnord"}),
+    el("span",{class:"wm"},"Redazione"),
+    el("div",{class:"acts"},
+      el("button",{class:"m-ib","aria-label":"Nuovo contenuto",onclick:()=>startComposer()},"＋"),
+      el("button",{class:"m-ib","aria-label":"Menu",onclick:()=>{S.mMenu=true;render();}},"☰",
+        (nuove+bozze)?el("span",{class:"bdg"},String(nuove+bozze)):null))));
+  bar.append(el("h1",{},M_TITOLI[S.view]||"Redazione"));
+  const sotto=M_SOTTO[S.view];
+  if(S.view==="idee"){
+    bar.append(el("div",{class:"sub"},nuove
+      ? nuove+(nuove===1?" proposta in attesa":" proposte in attesa")+" · l'agente ne porta di nuove il lunedì"
+      : "Nessuna proposta in attesa: generale quando vuoi."));
+  }else if(sotto)bar.append(el("div",{class:"sub"},sotto));
+  bar.append(el("div",{style:"margin-top:11px"},
+    el("span",{class:"pill "+(dry?"dry":"live")},el("span",{class:"dot"}),
+      dry?"Dry-run · simulazione":"Live · pubblica davvero")));
+  return bar;
+}
+function mMenu(){
+  const nuove=ideeNuove().length,bozze=inLavorazione().length;
+  const close=()=>{S.mMenu=false;render();};
+  const wrap=el("div",{class:"m-menu"});
+  wrap.append(el("div",{class:"mh"},
+    el("img",{class:"logo",src:LOGO,alt:"",style:"width:32px;height:32px;border-radius:9px"}),
+    el("span",{class:"t"},"Redazione"),
+    el("button",{class:"m-ib",style:"margin-left:auto","aria-label":"Chiudi",onclick:close},"✕")));
+  const nav_=el("nav",{});
+  M_VOCI.forEach(([v,ic,lb])=>{
+    const bd=v==="idee"?nuove:v==="bozze"?bozze:0;
+    nav_.append(el("button",{class:S.view===v?"on":"",onclick:()=>{
+      S.mMenu=false;
+      if(v==="composer"){startComposer();return;}
+      nav(v);
+    }},el("span",{class:"ic"},ic),el("span",{},lb),bd?el("span",{class:"bdg"},String(bd)):null));
+  });
+  nav_.append(el("button",{onclick:async()=>{
+    S.mMenu=false;render();
+    try{await loadAll();render();toast("Dati aggiornati.","ok");}
+    catch(e){toast("Ricarica fallita: "+e.message,"err");}
+  }},el("span",{class:"ic"},"↻"),el("span",{},"Ricarica dati")));
+  wrap.append(nav_);
+  wrap.append(el("div",{class:"mf"},
+    el("span",{class:"pill "+(isDry()?"dry":"live"),style:"align-self:flex-start"},
+      el("span",{class:"dot"}),isDry()?"Dry-run · simulazione":"Live · pubblica davvero"),
+    el("div",{class:"note"},"Cliente-obiettivo: ",el("b",{},"il proprietario che vende"),", mai chi compra.")));
+  return wrap;
+}
+
+/* ---------- composer: testata e media dal telefono ---------- */
+function mComposerBar(){
+  const c=S.composer;
+  const idx=Math.max(0,STEPS.findIndex(s=>s[0]===c.step));
+  const g=stepGuards();
+  const bar=el("header",{class:"m-cbar"});
+  bar.append(el("div",{class:"r"},
+    el("button",{class:"m-ib","aria-label":"Chiudi",onclick:()=>{
+      if(c.dirty&&!confirm("Hai modifiche non salvate. Chiudere lo stesso?"))return;
+      S.composer=null;nav("idee");
+    }},"✕"),
+    el("span",{class:"ti"},c.titolo||c.tema||"Nuovo contenuto"),
+    el("button",{class:"sv"+(c.dirty?"":" clean"),onclick:saveDraft},c.dirty?"● Salva":"Salvato")));
+  const line=el("div",{class:"line"});
+  STEPS.forEach(([k])=>line.append(el("i",{class:g.done.includes(k)?"done":(c.step===k?"now":"")})));
+  bar.append(line);
+  bar.append(el("div",{class:"lbl"},el("h2",{},STEPS[idx][1]),
+    el("span",{class:"n"},"Step "+(idx+1)+" di "+STEPS.length)));
+  return bar;
+}
+function mMediaMobile(kind){
+  const c=S.composer;
+  const video=kind!=="image";
+  const wrap=el("div",{class:"field"});
+  const mkInput=(cap,multi)=>{
+    const inp=el("input",{type:"file",accept:video?"video/*":"image/*",style:"display:none"});
+    if(multi)inp.multiple=true;
+    if(cap)inp.setAttribute("capture","environment");
+    inp.onchange=e=>{const f=[...e.target.files];e.target.value="";handleFiles(f,kind);};
+    return inp;
+  };
+  const inpCam=mkInput(true,false), inpGal=mkInput(false,kind!=="mp4");
+  wrap.append(inpCam,inpGal);
+  wrap.append(el("div",{class:"m-shots"},
+    el("button",{class:"btn btn-p cam",disabled:c.uploading,onclick:()=>inpCam.click()},
+      "📷 Scatta "+(video?"un video":"una foto")),
+    el("button",{class:"btn btn-g",disabled:c.uploading,onclick:()=>inpGal.click()},"🖼️ Galleria")));
+  if(kind==="mp4"&&c.url_video){
+    wrap.append(el("div",{class:"thumbs"},el("div",{class:"thumb"},
+      el("video",{src:c.url_video,muted:true,playsinline:true}),
+      el("button",{class:"rm",onclick:()=>{c.url_video="";c.dirty=true;render();}},"✕"))));
+  }else if(c.foto.length){
+    const t=el("div",{class:"thumbs"});
+    c.foto.forEach((u,i)=>t.append(el("div",{class:"thumb"},el("img",{src:u}),
+      i===0?el("span",{style:"position:absolute;left:0;right:0;bottom:0;background:rgba(20,38,25,.78);color:#fff;font-size:9px;font-weight:700;letter-spacing:.08em;text-align:center;padding:3px 0"},"COPERTINA"):null,
+      el("button",{class:"rm",onclick:()=>{c.foto.splice(i,1);c.dirty=true;updatePreview();render();}},"✕"))));
+    wrap.append(t);
+  }
+  if(c.uploading)wrap.append(el("div",{style:"font-size:12.5px;color:var(--muted);margin-top:10px"},
+    el("span",{class:"sp",style:"display:inline-block;width:12px;height:12px;border-width:2px;vertical-align:middle;margin-right:6px"}),
+    "Carico su Cloudinary…"));
+  else if(!c.foto.length&&!c.url_video)wrap.append(el("div",{class:"hint",style:"margin-top:10px"},
+    "La prima foto è la copertina del carosello. Instagram vuole almeno 1080 px di lato: scatta ora, non riciclare da WhatsApp."));
+  return wrap;
+}
+
+/* ---------- avanzamento di una bozza ---------- */
+const M_STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],
+  ["foto","Foto"],["anteprima","Anteprima"],["programma","Pronto"]];
+function slotProgress(s){
+  const serveBlog=(s.tipo==="entrambi"||s.tipo==="articolo_blog");
+  let intLocale=false;try{intLocale=!!localStorage.getItem("rdz_int_"+s.id);}catch(e){}
+  const hasIdea=!!(s.tema||s.titolo);
+  const hasInt=!!(s.id_intervista||intLocale);
+  const hasTesto=!!(s.caption_ig&&(!serveBlog||s.testo_blog));
+  const hasHook=!!s.hook;
+  const hasFoto=!!(s.url_foto||s.url_video);
+  const done=[];
+  if(hasIdea)done.push("idea");
+  if(hasInt)done.push("intervista");
+  if(hasTesto)done.push("testo");
+  if(hasHook)done.push("hook");
+  if(hasFoto)done.push("foto");
+  const now=(M_STEPS.find(([k])=>!done.includes(k))||M_STEPS[M_STEPS.length-1])[0];
+  let manca="";
+  if(!hasIdea)manca="Manca il tema: apri e scrivi di cosa parla.";
+  else if(!hasInt)manca="Manca l'intervista: sono le tue risposte a fare il contenuto.";
+  else if(!hasTesto)manca="Il testo non è ancora stato generato.";
+  else if(!hasHook)manca="Manca l'hook della copertina.";
+  else if(!hasFoto)manca="Manca la foto di copertina — è l'unica cosa che lo tiene in bozza.";
+  else manca="Ci sei: controlla l'anteprima e segnalo pronto.";
+  return {done,now,manca,hasFoto,pct:Math.round(done.length/M_STEPS.length*100)};
+}
+function mApriSlot(s,step){
+  const slot=slotById(s.id)||s;
+  startComposer(slot);
+  if(step&&S.composer){
+    const g=stepGuards();
+    if(g.reach.includes(step)){S.composer.step=step;render();}
+  }
+}
+function mWipCard(s){
+  const p=PILLARS[s.pilastro]||PILLARS.territorio;
+  const pr=slotProgress(s);
+  const card=el("div",{class:"m-wip"});
+  card.append(el("div",{class:"t"},
+    el("span",{class:"chip"},p.emoji+" "+p.label),
+    el("span",{class:"when"},s.data?("esce "+DOW[dowOf(s.data)].toLowerCase()+" "+fmtDate(s.data)+(s.ora?" · "+s.ora:"")):"senza data")));
+  card.append(el("h3",{},s.titolo||s.tema||"(senza titolo)"));
+  const steps=el("div",{class:"m-steps"});
+  M_STEPS.forEach(([k,l])=>steps.append(el("div",{class:"s"+(pr.done.includes(k)?" done":pr.now===k?" now":"")},
+    el("span",{class:"b"}),el("span",{},l))));
+  card.append(steps);
+  card.append(el("div",{class:"miss"},el("span",{},pr.hasFoto?"→":"📷"),el("span",{},pr.manca)));
+  const go=el("div",{class:"go"});
+  if(!pr.hasFoto)go.append(el("button",{class:"btn btn-p",style:"background:var(--sage);color:#12251a",
+    onclick:()=>mApriSlot(s,"foto")},"📷 Aggiungi foto"));
+  go.append(el("button",{class:"btn btn-ghost"+(pr.hasFoto?" btn-p":""),
+    style:pr.hasFoto?"background:var(--sage);color:#12251a":"",onclick:()=>mApriSlot(s)},"Continua"));
+  card.append(go);
+  return card;
+}
+function mWipMini(s){
+  const pr=slotProgress(s);
+  const etichetta=(M_STEPS.find(([k])=>k===pr.now)||["","Pronto"])[1];
+  return el("div",{class:"m-mini"},
+    el("div",{class:"ring",style:`background:conic-gradient(var(--sage-ink) 0 ${pr.pct}%,#e6e3da 0)`},
+      el("b",{},pr.done.length+"/"+M_STEPS.length)),
+    el("div",{class:"tx"},
+      el("div",{class:"h"},s.titolo||s.tema||"(senza titolo)"),
+      el("div",{class:"s"},"Fermo a: "+etichetta+(s.data?" · "+fmtDate(s.data):""))),
+    el("button",{class:"btn btn-g btn-sm",onclick:()=>mApriSlot(s)},"Riprendi"));
+}
+
+/* ---------- home telefono: le idee ---------- */
+function MobileIdeeHome(){
+  const frag=el("div",{});
+  const v=vacInfo();
+  if(v.on&&v.i&&v.f)frag.append(vacBanner(v));
+  const lavori=inLavorazione();
+  if(lavori.length){
+    frag.append(el("div",{class:"m-sec"},el("h2",{},"Riprendi"),
+      el("span",{class:"c"},lavori.length===1?"1 in lavorazione":lavori.length+" in lavorazione"),
+      lavori.length>3?el("span",{class:"more",onclick:()=>nav("bozze")},"Vedi tutti"):null));
+    frag.append(mWipCard(lavori[0]));
+    lavori.slice(1,3).forEach(s=>frag.append(mWipMini(s)));
+  }
+  const nuove=ideeNuove();
+  const secIdee=el("div",{class:"m-sec"},el("h2",{},"Da valutare"),
+    el("span",{class:"c"},nuove.length?(nuove.length===1?"1 proposta":nuove.length+" proposte"):""));
+  if(nuove.length>1)secIdee.append(el("span",{class:"more",onclick:()=>{S.mIdeeElenco=!S.mIdeeElenco;render();}},
+    S.mIdeeElenco?"In fila":"Elenco"));
+  frag.append(secIdee);
+  if(!nuove.length){
+    frag.append(el("div",{class:"m-icard",style:"text-align:center;padding:26px 18px"},
+      el("div",{style:"font-size:34px;margin-bottom:10px"},"💡"),
+      el("div",{style:"font-weight:700;margin-bottom:6px"},"Nessuna proposta in attesa"),
+      el("div",{style:"font-size:13.5px;color:var(--muted);line-height:1.5;margin-bottom:15px"},
+        "L'agente ne porta di nuove il lunedì mattina. Se hai fretta, chiedigliele adesso."),
+      el("button",{class:"btn btn-p",style:"width:100%",onclick:openGeneraIdee},"⚡ Genera idee ora")));
+  }else if(S.mIdeeElenco){
+    gruppiPerPilastro(nuove).forEach(([k,list])=>{
+      const p=PILLARS[k]||PILLARS.territorio;
+      frag.append(el("div",{class:"idee-group-title",style:"margin:18px 2px 10px"},
+        el("span",{class:"gdot",style:"background:"+p.color}),
+        el("span",{class:"gname"},p.emoji+" "+p.label),
+        el("span",{class:"gcount"},String(list.length))));
+      list.forEach(i=>frag.append(mIdeaCard(i)));
+    });
+  }else{
+    const fila=el("div",{class:"m-hcards"});
+    nuove.forEach(i=>fila.append(mIdeaMini(i)));
+    frag.append(fila);
+    frag.append(el("button",{class:"btn btn-g",style:"width:100%;margin-top:12px",onclick:openGeneraIdee},
+      "⚡ Genera altre idee"));
+  }
+  const prossima=mProssimaUscita();
+  if(prossima)frag.append(el("div",{class:"m-sec",style:"margin-top:26px"},el("h2",{},"Prossima uscita")),prossima);
+  return frag;
+}
+function mIdeaMini(i){
+  const p=PILLARS[i.pilastro]||PILLARS.territorio;
+  const score=parseInt(i.punteggio)||0;
+  return el("div",{class:"m-hcard"},
+    el("div",{class:"hrow",style:"gap:7px"},
+      el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+      score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score):null),
+    el("h3",{},i.titolo),
+    i.domanda_lettore?el("div",{class:"q"},"“"+i.domanda_lettore+"”"):null,
+    (i.angolo_locale||i.luogo)?el("div",{class:"where"},el("span",{},"📍"),el("span",{},i.angolo_locale||i.luogo)):null,
+    el("div",{class:"acts"},
+      el("button",{class:"btn btn-p btn-sm",onclick:()=>accettaIdea(i)},"Sviluppa →"),
+      el("button",{class:"btn btn-g btn-sm no",onclick:()=>scartaIdea(i)},"✕")));
+}
+function mIdeaCard(i){
+  const p=PILLARS[i.pilastro]||PILLARS.territorio;
+  const score=parseInt(i.punteggio)||0;
+  const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
+  const card=el("div",{class:"m-icard"},
+    el("div",{class:"top"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+      score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
+    el("h3",{},i.titolo),
+    i.domanda_lettore?el("div",{class:"q"},"“"+i.domanda_lettore+"”"):null,
+    (i.angolo_locale||i.luogo)?el("div",{class:"where"},el("span",{},"📍"),el("span",{},i.angolo_locale||i.luogo)):null,
+    i.brief_foto?el("div",{class:"where"},el("span",{},"📷"),el("span",{},i.brief_foto)):null);
+  if(domande.length){
+    const det=el("details",{});
+    det.append(el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" già pronte"));
+    det.append(el("ol",{},...domande.map(d=>el("li",{},d))));
+    card.append(det);
+  }
+  card.append(el("div",{class:"acts"},
+    el("button",{class:"btn btn-p",onclick:()=>accettaIdea(i)},"Sviluppa →"),
+    el("button",{class:"btn btn-g no",onclick:()=>scartaIdea(i)},"✕")));
+  return card;
+}
+function mProssimaUscita(){
+  const today=todayStr();
+  const s=visibleSlots()
+    .filter(x=>x.data&&x.data>=today&&x.tipo!=="esterno"&&["pronto","ok_confermato","approvato"].includes(x.stato))
+    .sort((a,b)=>(a.data+(a.ora||"")).localeCompare(b.data+(b.ora||"")))[0];
+  if(!s)return null;
+  const p=PILLARS[s.pilastro]||PILLARS.territorio;
+  const manuale=s.tipo==="storia_ig";
+  return el("div",{class:"m-next",onclick:()=>nav("calendario")},
+    el("span",{class:"d",style:`background:var(--${s.pilastro==="dati"?"dati":s.pilastro==="reale"?"reale":"terr"}-soft);color:var(--${s.pilastro==="dati"?"dati":s.pilastro==="reale"?"reale":"terr"}-ink)`},
+      DOW[dowOf(s.data)]+" "+fmtDate(s.data)),
+    el("div",{class:"tx"},el("b",{},p.label),
+      manuale?" — la storia è pronta, la pubblichi tu a mano":" — esce da solo",
+      s.ora?" alle "+s.ora:""));
 }
 
 /* ============================================================ BOZZE */
@@ -980,6 +1469,14 @@ function ComposerView(){
   const c=S.composer;
   if(!c)return emptyState("✍️","Nessun contenuto aperto","Scegli uno slot dal calendario o parti da un'idea.");
   const frag=el("div",{});
+  // Sul telefono la testata (chiudi/salva/step) sta nella shell: qui solo il pannello.
+  if(isMobile()){
+    const panel=stepPanel();
+    const bars=panel.querySelectorAll(".cbar");
+    if(bars.length)bars[bars.length-1].classList.add("m-stick");
+    frag.append(el("div",{class:"cwrap"},panel,c.step==="anteprima"?previewPanel():null));
+    return frag;
+  }
   frag.append(el("div",{class:"phead"},
     el("div",{},el("h1",{},c.isNew?"Nuovo contenuto":"Modifica contenuto"),
       el("div",{class:"sub"},"Intervista, non generazione cieca: partiamo dalla tua opinione. Lettore immaginato: un proprietario di Brugherio che potrebbe vendere.")),
@@ -1208,7 +1705,7 @@ function stepPanel(){
       panel.append(brief);
     }
     if(c.tipo==="reel")panel.append(reelModes());
-    if(c.tipo!=="reel"||c.reelMode==="foto")panel.append(mediaUploader("image"));
+    if(c.tipo!=="reel"||c.reelMode==="foto")panel.append(isMobile()?mMediaMobile("image"):mediaUploader("image"));
     if(c.tipo==="reel"&&c.reelMode==="clip")panel.append(mediaUploader("video-clips"));
     if(c.tipo==="reel"&&c.reelMode==="mp4")panel.append(mediaUploader("mp4"));
     if(c.tipo==="reel"&&(c.reelMode==="foto"||c.reelMode==="clip"))panel.append(overlayEditor());
