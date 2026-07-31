@@ -505,7 +505,7 @@ table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);ou
 .m-stick .btn{min-height:48px}
 .m-stick .btn.next{flex:1}
 
-@media(max-width:760px){
+@media(max-width:760px),(orientation:landscape) and (max-height:520px) and (pointer:coarse){
   body{font-size:15.5px}
   .m-app .phead{display:none}
   .m-app .panel{padding:0;background:none;border:none;box-shadow:none}
@@ -575,7 +575,10 @@ const S = {
 
 /* Versione telefono: shell dedicata sotto i 760px. Sul telefono si parte
    dalle Idee, non dal calendario: il lavoro parte sempre da una proposta. */
-const MQ_MOBILE=window.matchMedia("(max-width:760px)");
+/* Il telefono girato in orizzontale e largo 874px: con la sola soglia di
+   larghezza tornava il layout da PC. La seconda condizione tiene la shell
+   del telefono anche da sdraiato (schermo basso + dito, non mouse). */
+const MQ_MOBILE=window.matchMedia("(max-width:760px),(orientation:landscape) and (max-height:520px) and (pointer:coarse)");
 const isMobile=()=>MQ_MOBILE.matches;
 if(isMobile()){S.view="idee";S.calMode="lista";}
 let _eraMobile=isMobile();
