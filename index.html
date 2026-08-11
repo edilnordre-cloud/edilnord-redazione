@@ -218,6 +218,11 @@ a{color:var(--sage-ink)}
 .qcard .qtag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:7px}
 .cbar{display:flex;gap:10px;justify-content:space-between;margin-top:24px;flex-wrap:wrap}
 .gate-warn{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);color:#7a5a12;border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;font-weight:500;margin-top:6px}
+/* campo con occhio mostra/nascondi (chiave di accesso) */
+.inp-eye{position:relative}
+.inp-eye .inp{padding-right:46px}
+.inp-eye .eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;border:0;background:none;border-radius:var(--radius-sm);opacity:.55;transition:opacity .15s}
+.inp-eye .eye:hover{opacity:1}
 
 /* media briefs & thumbs */
 .brief-box{background:var(--sage-soft);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:18px;font-size:13.5px;color:var(--sage-ink)}
@@ -554,6 +559,10 @@ table.batch .tin:focus{border-color:var(--sage-ink);background:var(--surface);ou
   .m-app .qopts{gap:var(--ms-2);margin-bottom:var(--ms-3)}
   .m-app .brief-box{padding:var(--ms-3) var(--ms-4);margin-bottom:var(--ms-4)}
   .m-app .gate-warn{padding:var(--ms-3) var(--ms-4);margin-top:var(--ms-3)}
+  /* col dito 36px non si prende: l'occhio va allargato. Niente prefisso
+     .m-app: il Gate sta fuori dalla shell del telefono. */
+  .inp-eye .eye{width:44px;height:44px;font-size:17px}
+  .inp-eye .inp{padding-right:52px}
   .m-app .thumbs{grid-template-columns:repeat(3,1fr);gap:var(--ms-2);margin-top:var(--ms-3)}
   /* il tocco per togliere una foto deve restare preso al primo colpo */
   .m-app .thumb .rm{width:32px;height:32px;font-size:15px;top:var(--ms-1);right:var(--ms-1)}
@@ -717,9 +726,21 @@ function nav(v){S.view=v;S.composer=(v==="composer")?S.composer:null;render();wi
 function Gate(){
   const wrap=el("div",{class:"backdrop"});
   let val="";
-  const inp=el("input",{class:"inp",type:"password",placeholder:"Incolla la chiave…",style:"margin-bottom:14px",
+  const inp=el("input",{class:"inp",type:"password",placeholder:"Incolla la chiave…",
     oninput:e=>val=e.target.value.trim(),
     onkeydown:e=>{if(e.key==="Enter")go();}});
+  // La chiave e lunga e si incolla: senza vederla, un carattere di troppo
+  // (o uno spazio preso col copia-incolla) si scopre solo col 401.
+  const eye=el("button",{class:"eye",type:"button","aria-label":"Mostra la chiave",title:"Mostra la chiave"},"👁");
+  eye.addEventListener("click",()=>{
+    const mostra=inp.type==="password";
+    inp.type=mostra?"text":"password";
+    eye.textContent=mostra?"🙈":"👁";
+    const lab=mostra?"Nascondi la chiave":"Mostra la chiave";
+    eye.setAttribute("aria-label",lab);eye.setAttribute("title",lab);
+    inp.focus();
+  });
+  const campo=el("div",{class:"inp-eye",style:"margin-bottom:14px"},inp,eye);
   const btn=el("button",{class:"btn btn-p",style:"width:100%",onclick:go},"Entra in Redazione");
   async function go(){
     if(!val){toast("Inserisci la chiave.","warn");return;}
@@ -731,7 +752,7 @@ function Gate(){
     el("div",{class:"lock"},"🔐"),
     el("h2",{class:"anton",style:"font-size:26px"},"Redazione Edilnord"),
     el("p",{},"Centro editoriale di Edilnord RE. Inserisci la chiave di accesso: resta solo in questa sessione, non viene salvata."),
-    inp,btn
+    campo,btn
   );
   wrap.append(m);setTimeout(()=>inp.focus(),80);return wrap;
 }
