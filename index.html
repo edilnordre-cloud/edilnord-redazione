@@ -132,10 +132,12 @@ a{color:var(--sage-ink)}
 .cal-dow{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;text-align:center;padding:2px 0 6px}
 .cal-cell{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);min-height:112px;padding:8px;display:flex;flex-direction:column;gap:5px;transition:border-color .15s,box-shadow .15s}
 .cal-cell.out{background:transparent;border-color:transparent}
-.cal-cell.today{border-color:var(--sage);box-shadow:0 0 0 1px var(--sage)}
+.cal-cell.today{border-color:var(--sage-ink);box-shadow:0 0 0 2px var(--sage)}
 .cal-cell.drop{border-color:var(--sage-ink);border-style:dashed;background:var(--sage-soft)}
 .cal-day{font-family:'Anton',sans-serif;font-size:15px;color:var(--ink-2)}
-.cal-cell.today .cal-day{color:var(--sage-ink)}
+.cal-head{display:flex;align-items:center;gap:6px}
+.cal-cell.today .cal-day{color:#fff;background:var(--sage-ink);border-radius:999px;min-width:26px;height:26px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.cal-today-badge{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.07em;color:var(--sage-ink)}
 .slot{border:1px solid var(--line);border-radius:8px;padding:6px 7px;font-size:11.5px;line-height:1.25;cursor:pointer;background:var(--surface);transition:transform .12s var(--e-out),box-shadow .12s,border-color .12s;position:relative}
 .slot:hover{box-shadow:var(--shadow-1);border-color:var(--line-2);transform:translateY(-1px)}
 .slot .stitle{font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -613,7 +615,7 @@ const DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 const S = {
   key:null, ready:false, view:"calendario", loading:true,
   data:{calendario:[], idee:[], config:{}, metriche:null},
-  calMode:"mese", calMonth:new Date(2026,6,1),
+  calMode:"mese", calMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),
   composer:null,           // stato composer attivo
   batch:null,              // stato modalità batch
   spesaChecked:{},
@@ -1207,7 +1209,8 @@ function calMonth(){
     const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const cell=el("div",{class:"cal-cell"+(ds===today?" today":"")});
     cell.dataset.date=ds;
-    cell.append(el("div",{class:"cal-day"},String(d)));
+    if(ds===today){cell.append(el("div",{class:"cal-head"},el("div",{class:"cal-day"},String(d)),el("span",{class:"cal-today-badge"},"OGGI")));}
+    else{cell.append(el("div",{class:"cal-day"},String(d)));}
     (byDate[ds]||[]).sort((a,b)=>(a.ora||"").localeCompare(b.ora||"")).forEach(s=>cell.append(slotChip(s)));
     // drop target (desktop)
     cell.addEventListener("dragover",e=>{if(S._drag){e.preventDefault();cell.classList.add("drop");}});
@@ -1220,7 +1223,8 @@ function calMonth(){
       el("div",{class:"monthnav"},
         el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m-1,1);render();}},"‹"),
         el("span",{class:"mlabel"},MONTHS[m]+" "+y),
-        el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m+1,1);render();}},"›")),
+        el("button",{class:"iconbtn",onclick:()=>{S.calMonth=new Date(y,m+1,1);render();}},"›"),
+        el("button",{class:"btn btn-g btn-sm",style:"margin-left:10px",onclick:()=>{const n=new Date();S.calMonth=new Date(n.getFullYear(),n.getMonth(),1);render();}},"Oggi")),
       el("div",{class:"drag-hint",style:"font-size:12px;color:var(--muted)"},"Trascina uno slot su un altro giorno per spostarlo")),
     grid);
   return wrap;
@@ -1730,6 +1734,9 @@ function stepPanel(){
     panel.append(el("h2",{},"Hook del carosello"),el("p",{class:"pd"},"La prima frase che appare sulla copertina. Max 7 parole, tutto maiuscolo, elemento concreto obbligatorio."));
     if(c.generating){
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Genero le varianti hook…"));
+    } else if(c._hookFailed){
+      panel.append(el("div",{class:"gate-warn"},"⚠️","L'AI non ha restituito hook validi. Riprova."));
+      panel.append(el("button",{class:"btn btn-p btn-sm",style:"margin-top:12px",onclick:()=>{c._hookFailed=false;genHooks();}},"↻ Riprova"));
     } else if(!c.hooks||!c.hooks.length){
       if(!c._autoGenHooks){c._autoGenHooks=true;setTimeout(()=>genHooks(),50);}
       panel.append(el("div",{class:"loading"},el("span",{class:"sp"}),"Genero le varianti hook…"));
@@ -1754,7 +1761,17 @@ function stepPanel(){
       });
       panel.append(grid);
       panel.append(el("button",{class:"btn btn-g btn-sm",style:"margin-top:12px",onclick:genHooks},"↻ Rigenera"));
-      if(c.hookScelto)panel.append(el("div",{class:"brief-box"},el("b",{},"Hook selezionato: "),c.hookScelto.testo));
+      if(c.hookScelto){
+        const box=el("div",{class:"brief-box"});
+        box.append(el("b",{},"Hook selezionato — ritoccalo se vuoi:"));
+        const inp=el("input",{type:"text",maxlength:"60",value:c.hookScelto.testo,
+          style:"width:100%;margin-top:6px;padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;font-family:'Anton',sans-serif;text-transform:uppercase;font-size:16px;color:var(--ink);background:var(--surface)"});
+        const cnt=el("div",{style:"font-size:11px;color:var(--muted);margin-top:4px"},c.hookScelto.testo.split(/\s+/).filter(Boolean).length+" parole");
+        inp.addEventListener("input",()=>{c.hookScelto.testo=inp.value.toUpperCase();c.dirty=true;saveStepLocal();cnt.textContent=inp.value.split(/\s+/).filter(Boolean).length+" parole";});
+        inp.addEventListener("blur",()=>render());
+        box.append(inp,cnt);
+        panel.append(box);
+      }
     }
     panel.append(el("div",{class:"cbar"},
       el("button",{class:"btn btn-g",onclick:()=>{c.step="testo";render();}},"← Indietro"),
@@ -1922,14 +1939,20 @@ async function saveIntervistaNext(){
 async function genHooks(){
   const c=S.composer;
   if(!c.tema.trim()){toast("Scrivi prima il tema nel primo step.","warn");return;}
-  c.generating=true;render();
-  try{
-    const r=await api("redazione-genera-hook",{tema:c.tema,pilastro:c.pilastro,caption_preview:c.caption_ig||"",
-      testo_blog:c.testo_blog||"",
-      intervista:{domande:c.intervista.domande,risposte:c.intervista.risposte}});
-    if(!r.ok||!r.hooks){toast(r.errore||"Generazione hook fallita.","err");}
-    else{c.hooks=r.hooks;c.hookScelto=null;c.dirty=true;toast("4 varianti generate.","ok");}
-  }catch(e){toast("Errore: "+e.message,"err");}
+  c.generating=true;c._hookFailed=false;render();
+  const iv=c.intervista||{domande:[],risposte:[]};
+  let hooks=null,err="";
+  for(let attempt=0;attempt<2&&(!hooks||!hooks.length);attempt++){
+    try{
+      const r=await api("redazione-genera-hook",{tema:c.tema,pilastro:c.pilastro,caption_preview:c.caption_ig||"",
+        testo_blog:c.testo_blog||"",
+        intervista:{domande:iv.domande,risposte:iv.risposte}});
+      if(r.ok&&r.hooks&&r.hooks.length){hooks=r.hooks;}
+      else{err=r.errore||"L'AI non ha restituito hook validi.";}
+    }catch(e){err="Errore: "+e.message;}
+  }
+  if(hooks&&hooks.length){c.hooks=hooks;c.hookScelto=null;c.dirty=true;c._hookFailed=false;toast("4 varianti generate.","ok");}
+  else{c._hookFailed=true;toast(err||"Generazione hook fallita, riprova.","err");}
   c.generating=false;render();
 }
 async function genTesto(indicazione){
