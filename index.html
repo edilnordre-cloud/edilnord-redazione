@@ -1476,7 +1476,7 @@ async function pollIdee(times){
 
 /* ============================================================ COMPOSER */
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
-function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||""}));}catch(e){}}
+function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||"",primo_commento:c.primo_commento||""}));}catch(e){}}
 async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);if(!existing)return;const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
 async function eliminaBozza(id){if(!confirm("Eliminare questa bozza?"))return;const slot=slotById(id);if(!slot)return;const row={...slot,stato:"eliminata"};try{await api("redazione-salva-contenuto",{contenuto:row});const idx=S.data.calendario.findIndex(x=>x.id===id);if(idx>=0)S.data.calendario.splice(idx,1);try{localStorage.removeItem('rdz_int_'+id);localStorage.removeItem('rdz_step_'+id);}catch(e){}render();toast("Bozza eliminata.","ok");}catch(e){toast("Errore eliminazione.","err");}}
 function pickSlotThenCompose(extra={}){
@@ -1533,6 +1533,7 @@ function startComposer(slot,extra={}){
     hooks:[],hookScelto:(_savedStep&&_savedStep.hookScelto)?_savedStep.hookScelto:((slot&&slot.hook)?{tipo:"salvato",testo:slot.hook}:null),
     dirty:false, generating:false, uploading:false,
     cta_applicata:slot?slot.cta==="valutatore":false,
+    primo_commento:(slot&&slot.primo_commento)||(_savedStep&&_savedStep.primo_commento)||"",
     ideaId:idea?idea.id:null
   };
   S.view="composer";render();
@@ -1717,8 +1718,11 @@ function stepPanel(){
         }
         panel.append(blogWrap);
       }
-      panel.append(field("Caption Instagram",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();},"",false),
+      panel.append(field("Caption Instagram",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreview();const cb=document.getElementById('capcoach');if(cb)cb.innerHTML=coachHTML(c);},"",false),
         "La prima riga deve avere un numero, un luogo o una domanda. Hashtag già in coda."));
+      const coachBox=el("div",{class:"brief-box",id:"capcoach",style:"background:#f6f5f1;border:1px solid var(--border)"});coachBox.innerHTML=coachHTML(c);panel.append(coachBox);
+      panel.append(field("Primo commento — il link va QUI, non in caption",textarea(c.primo_commento||"",v=>{c.primo_commento=v;c.dirty=true;},"Es. 👉 Scopri in 2 minuti quanto vale casa tua: edilnordre.it/valutazione-immobile-gratuita-brugherio"),
+        "Un link nella caption dimezza la reach. Tienilo qui e incollalo come primo commento appena pubblichi."));
       if(c.cta_applicata)panel.append(el("div",{class:"brief-box"},el("b",{},"CTA valutatore inserita"),"Questo è 1 contenuto su 3: chiude con l'invito soft al valutatore."));
       const regen=el("div",{class:"field"},el("label",{},"Rigenera con un'indicazione"),
         el("div",{class:"hrow"},
@@ -2132,11 +2136,65 @@ function sanitize(html){return String(html).replace(/<script[\s\S]*?<\/script>/g
 function updatePreview(){const h=$("#prev-holder");if(h){h.innerHTML="";h.append(igCard());}}
 
 /* save / states */
+/* ===== Coach IG: applica la strategia funnel nel momento in cui scrivi la caption ===== */
+const IG_ZONE=['centro','san damiano','sandamiano','baraggia','increa','moncucco','torazza','san cristoforo','sant’albino','sant albino','edilnord','viale lombardia','via garibaldi','san maurizio','ex rista','rista','torriani','zona stazione'];
+function coachAnalyze(cap){
+  const raw=String(cap||"");const t=raw.toLowerCase();
+  const zona=IG_ZONE.some(z=>t.includes(z))||/\b(via|viale|piazza|largo|corso)\s+[a-zà-ù]/i.test(raw);
+  const urlRe=/(https?:\/\/[^\s]+|www\.[^\s]+|[a-z0-9-]+\.(?:it|com|net|org)\b[^\s]*)/i;
+  const linkMatch=raw.match(urlRe);
+  const link=!!linkMatch;
+  let cta="nessuna";
+  if(/salva(?:lo| questo| il post|te)?\b/i.test(t))cta="salva";
+  else if(/scrivimi|scrivici|in dm|mandami|contatta(?:ci|mi)/i.test(t))cta="dm";
+  else if(link)cta="link";
+  else if(/\?\s*(?:#|$)/m.test(raw))cta="domanda";
+  const tips=[];
+  if(zona)tips.push({s:1,txt:"Zona di Brugherio nominata"});
+  else tips.push({s:-1,txt:"Nomina una via o zona precisa di Brugherio (es. San Damiano, Via Increa): i post con zona fanno molta più reach."});
+  if(link)tips.push({s:-1,txt:"C'è un link nella caption: dimezza la reach. Spostalo nel primo commento.",act:1});
+  else tips.push({s:1,txt:"Nessun link nella caption"});
+  if(cta==="salva"||cta==="dm")tips.push({s:1,txt:"CTA di conversione (salva/DM)"});
+  else if(cta==="domanda")tips.push({s:-1,txt:"CTA a domanda: in 90 giorni ha prodotto 0 commenti. Meglio “salva questo post” o “scrivimi in DM la tua via”."});
+  else tips.push({s:0,txt:"Aggiungi una CTA che converte: “salva questo post” oppure “scrivimi in DM”."});
+  let score=(zona?40:0)+(!link?30:0)+((cta==="salva"||cta==="dm")?30:(cta==="nessuna"?10:0));
+  return {zona,link,linkText:linkMatch?linkMatch[0]:"",cta,tips,score};
+}
+function coachHTML(c){
+  const a=coachAnalyze(c.caption_ig);
+  const col=a.score>=80?"#1a7f37":a.score>=50?"#b8860b":"#c0392b";
+  const rows=a.tips.map(t=>{
+    const ic=t.s===1?"✅":t.s===0?"ℹ️":"⚠️";
+    const btn=t.act?' <button class="btn btn-g btn-sm" style="margin-left:6px;padding:1px 8px;font-size:12px" onclick="coachMoveLink()">Sposta nel 1° commento</button>':"";
+    return '<div style="display:flex;gap:7px;align-items:flex-start;margin:4px 0;font-size:13px;line-height:1.4"><span>'+ic+'</span><span>'+t.txt+btn+'</span></div>';
+  }).join("");
+  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><b style="font-size:13px">Coach IG · obiettivo valutazioni</b>'
+    +'<span style="margin-left:auto;font-weight:800;color:'+col+'">'+a.score+'/100</span></div>'+rows;
+}
+window.coachMoveLink=function(){
+  const c=S.composer;if(!c)return;
+  const cap=c.caption_ig||"";
+  const urlRe=/(https?:\/\/[^\s]+|www\.[^\s]+|[a-z0-9-]+\.(?:it|com|net|org)\b[^\s]*)/i;
+  if(!urlRe.test(cap))return;
+  const moved=[];
+  const keep=cap.split(/(\n+)/).map(function(seg){
+    if(/^\n+$/.test(seg))return seg;
+    const sents=seg.split(/(?<=[.!?])\s+/);
+    const kept=sents.filter(function(s){ if(urlRe.test(s)){moved.push(s.trim());return false;} return true; });
+    return kept.join(" ");
+  }).join("");
+  c.caption_ig=keep.replace(/\n{3,}/g,"\n\n").replace(/[ \t]{2,}/g," ").trim();
+  const frase=moved.join(" ").trim();
+  c.primo_commento=((c.primo_commento||"")+(c.primo_commento?"\n":"")+frase).trim();
+  c.dirty=true;updatePreview();render();
+  toast("Link spostato nel primo commento: incollalo come primo commento appena pubblichi.","ok",5000);
+};
 function composerToRow(stato){
   const c=S.composer;
   return {id:c.id,data:c.data,ora:c.ora||defaultOra(),pilastro:c.pilastro,tipo:c.tipo,
     titolo:c.titolo||c.tema,tema:c.tema,
     caption_ig:c.caption_ig,testo_blog:c.testo_blog,url_foto:c.foto.join(","),url_video:c.url_video,
+    primo_commento:c.primo_commento||"",
     stato,id_intervista:c.id_intervista,richiedi_ok_esplicito:c.richiedi_ok?"true":"false",
     geotag:c.geotag,note:c.brief_foto,cta:c.cta_applicata?"valutatore":"",
     hook:c.hookScelto&&c.hookScelto.testo?c.hookScelto.testo:""};
