@@ -1416,8 +1416,15 @@ function ideaCard(i){
 }
 // Il formato lo decide lo slot: un'idea reel cerca uno slot reel (giorno reel),
 // le altre lo slot del loro pilastro. Cosi il giorno da riempire decide reel/carosello.
+function firstFreeSlot(){
+  const t=todayStr();
+  return visibleSlots().filter(s=>["vuoto","opzionale"].includes(s.stato)&&s.data>=t&&s.tipo!=="esterno")
+    .sort((a,b)=>a.data.localeCompare(b.data))[0]||null;
+}
+// L'agente decide il formato: un'idea reel resta reel comunque. Preferisce lo
+// slot reel; se non c'è, prende il primo slot libero (ma il contenuto resta reel).
 function slotPerIdea(i){
-  return i.is_reel ? findFreeSlot("reel","reel") : findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));
+  return i.is_reel ? (findFreeSlot("reel","reel")||firstFreeSlot()) : findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));
 }
 async function accettaIdea(i){
   const slot=slotPerIdea(i);
@@ -1542,6 +1549,7 @@ function startComposer(slot,extra={}){
       const salvato=slot?String(slot.tipo||""):"";
       const iniziato=!!(slot&&(slot.caption_ig||slot.titolo));
       if(iniziato&&["post_ig","entrambi","storia_ig","reel"].includes(salvato))return salvato;
+      if(idea&&idea.is_reel)return "reel";   // l'agente ha deciso: è un reel, resta reel
       return tipoDaPilastro(pil);
     })(),
     tema:idea?idea.titolo:(slot&&slot.tema?slot.tema:slot&&slot.titolo?slot.titolo:""),
