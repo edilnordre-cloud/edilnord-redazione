@@ -753,7 +753,9 @@ function normSlot(r){r.stato=r.stato||"vuoto";return r;}
 // territorio. Il prefisso "Reel:" nel titolo va via, non vuol dire piu nulla.
 function normIdea(r){
   if(!PILASTRI_IDEE.includes(r.pilastro))r.pilastro=pilastroDiRipiego(r);
-  if(r.formato==="reel")r.formato=r.pilastro==="dati"?"articolo_blog":"post_ig";
+  // Il reel torna un formato valido (1 per run, faceless): non lo declasso piu,
+  // lo marco per mostrarne hook, struttura, condivisione e CTA in DM.
+  r.is_reel=(String(r.formato||"")==="reel");
   if(r.titolo)r.titolo=senzaPrefissoReel(r.titolo);
   return r;
 }
@@ -1077,6 +1079,7 @@ function mIdeaMini(i){
   return el("div",{class:"m-hcard"},
     el("div",{class:"top"},
       el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+      reelBadge(i),
       score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score):null),
     el("h3",{},i.titolo),
     i.domanda_lettore?el("div",{class:"q"},"“"+i.domanda_lettore+"”"):null,
@@ -1091,11 +1094,13 @@ function mIdeaCard(i){
   const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
   const card=el("div",{class:"m-icard"},
     el("div",{class:"top"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+      reelBadge(i),
       score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
     el("h3",{},i.titolo),
     i.domanda_lettore?el("div",{class:"q"},"“"+i.domanda_lettore+"”"):null,
     (i.angolo_locale||i.luogo)?el("div",{class:"where"},el("span",{},"📍"),el("span",{},i.angolo_locale||i.luogo)):null,
     i.brief_foto?el("div",{class:"where"},el("span",{},"📷"),el("span",{},i.brief_foto)):null);
+  reelDati(i).forEach(n=>card.append(n));
   if(domande.length){
     const det=el("details",{});
     det.append(el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" già pronte"));
@@ -1370,18 +1375,36 @@ function gruppoTitolo(k,n){
     p.perc?el("span",{class:"gperc"},"— "+p.perc):null,
     el("span",{class:"gcount"},n+(n===1?" proposta":" proposte")));
 }
+// Blocco reel: mostrato solo per le idee in formato reel (1 per run).
+// Rende visibili i campi che l'agente ora produce per Instagram 2026.
+function reelDati(i){
+  if(!i.is_reel)return [];
+  const parseFrasi=v=>{v=String(v||"").trim();if(!v)return null;return v;};
+  const rows=[];
+  if(parseFrasi(i.hook))rows.push(el("div",{},el("b",{},"Hook (primi 2 sec): "),i.hook));
+  if(parseFrasi(i.struttura_reel))rows.push(el("div",{},el("b",{},"Struttura: "),i.struttura_reel));
+  if(parseFrasi(i.trigger_condivisione))rows.push(el("div",{},el("b",{},"Da mandare a: "),i.trigger_condivisione));
+  if(parseFrasi(i.cta_dm))rows.push(el("div",{},el("b",{},"CTA in DM: "),i.cta_dm));
+  if(!rows.length)return [];
+  return [el("div",{style:"background:#eef5f2;border:1px solid #cfe0da;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:4px"},
+    el("div",{style:"font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#0f5d54"},"🎬 Reel della settimana"),
+    ...rows)];
+}
+function reelBadge(i){return i.is_reel?el("span",{class:"chip",style:"background:#12201d;color:#fff"},"🎬 REEL"):null;}
 function ideaCard(i){
   const p=PILLARS[i.pilastro]||PILLARS.territorio;
   const score=parseInt(i.punteggio)||0;
   const domande=(i.domande_intervista||"").trim().split(/\n+/).filter(Boolean);
   return el("div",{class:"idea"},
     el("div",{class:"hrow",style:"gap:7px"},el("span",{class:"chip p-"+i.pilastro},p.emoji+" "+p.label),
+      reelBadge(i),
       score?el("span",{class:"score"+(score<8?" mid":"")},"★ "+score+"/10"):null),
     el("h3",{},i.titolo),
     i.domanda_lettore?el("div",{class:"reader-q"},"“"+i.domanda_lettore+"”"):null,
     (i.angolo_locale||i.luogo)?el("div",{class:"angle"},"📍 "+(i.angolo_locale||i.luogo)):null,
     i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
     i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
+    ...reelDati(i),
     domande.length?el("details",{class:"domande"},
       el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
       el("ol",{},...domande.map(d=>el("li",{},d)))
