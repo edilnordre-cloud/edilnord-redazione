@@ -1,0 +1,13 @@
+{
+  "name": "edilnord-reel-kit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Genera reel infografici verticali (1080x1920) da template HTML + dati JSON. Faceless, gratis.",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.56.1"
+  }
+}

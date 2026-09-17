@@ -1,0 +1,27 @@
+{
+  "handle": "edilnordre",
+  "sub": "Immobiliare · Brugherio",
+  "hook": "A Brugherio<br>casa tua vale<br><em>1.000</em> o <em>2.810</em>€/mq?",
+  "hookSub": "Cambia tutto in 2 km. Dipende dalla via.",
+  "mapTitle": "La mappa del valore · Brugherio",
+  "zones": [
+    { "name": "San Damiano", "value": "2.810 €" },
+    { "name": "Centro", "value": "2.500 €" },
+    { "name": "Periferia", "value": "1.000 €" }
+  ],
+  "mapSrc": "Fonte: quotazioni OMI + mercato · media città 2.725 €/mq",
+  "barsTitle": "Il divario, in chiaro",
+  "bars": [
+    { "icon": "🏡", "name": "San Damiano", "value": "2.810 €/mq", "w": "100%", "cls": "a" },
+    { "icon": "🏢", "name": "Centro", "value": "2.500 €/mq", "w": "89%", "cls": "b" },
+    { "icon": "🌳", "name": "Periferia", "value": "1.000 €/mq", "w": "36%", "cls": "c" }
+  ],
+  "barsNote": "Tra la zona più cara e la più economica: <b>quasi 3 volte</b>.",
+  "trendTitle": "E il mercato sale",
+  "trendPct": "+7,4%",
+  "trendNote": "In 6 mesi. Casa tua oggi vale più di ieri — anche se non l'hai toccata.",
+  "ctaQ": "La tua via in che <em>fascia</em> è?",
+  "ctaSub": "Scrivimi la via in DM: ti mando il valore al mq aggiornato della tua zona.",
+  "audio": "audio di tendenza · original audio — edilnordre · prezzi immobili Brugherio 2026",
+  "bg": null
+}

@@ -1,0 +1,46 @@
+name: Reel
+
+# Genera un reel infografico (mp4 1080x1920) dal reel-kit. Gratis, on-demand.
+on:
+  workflow_dispatch:
+    inputs:
+      data_json:
+        description: "Dati del reel (JSON). Lascia vuoto per usare data.example.json"
+        required: false
+        default: ""
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: reel-kit
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Installa dipendenze
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Prepara i dati
+        run: |
+          if [ -n "${{ inputs.data_json }}" ]; then
+            printf '%s' '${{ inputs.data_json }}' > data.json
+          else
+            cp data.example.json data.json
+          fi
+
+      - name: Genera il reel
+        run: node render.mjs --data data.json --out out/reel.mp4
+
+      - name: Carica il video
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel-mp4
+          path: reel-kit/out/reel.*
+          if-no-files-found: error
