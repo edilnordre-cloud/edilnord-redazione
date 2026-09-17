@@ -1329,7 +1329,7 @@ function IdeeView(){
             try{await api("redazione-salva-idea",{idea:i});toast("Nota salvata.","ok");}
             catch(e){toast("Errore: "+e.message,"err");}
           }},"💾 Salva nota"),
-          el("button",{class:"btn btn-g btn-sm",onclick:()=>{const s=slotAssociato||findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));if(s)startComposer(s,{idea:i});else pickSlotThenCompose({idea:i});}},"✎ Riapri"))
+          el("button",{class:"btn btn-g btn-sm",onclick:()=>{const s=slotAssociato||slotPerIdea(i);if(s)startComposer(s,{idea:i});else pickSlotThenCompose({idea:i});}},"✎ Riapri"))
       ));
     });
     frag.append(devGrid);
@@ -1414,9 +1414,14 @@ function ideaCard(i){
       el("button",{class:"btn btn-g btn-sm",onclick:()=>scartaIdea(i)},"✕ Scarta"))
   );
 }
+// Il formato lo decide lo slot: un'idea reel cerca uno slot reel (giorno reel),
+// le altre lo slot del loro pilastro. Cosi il giorno da riempire decide reel/carosello.
+function slotPerIdea(i){
+  return i.is_reel ? findFreeSlot("reel","reel") : findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));
+}
 async function accettaIdea(i){
-  const slot=findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));
-  if(!slot){toast("Nessuno slot libero per pilastro \""+i.pilastro+"\". Aggiungi uno slot dal calendario prima di sviluppare questa idea.","warn",7000);return;}
+  const slot=slotPerIdea(i);
+  if(!slot){toast(i.is_reel?"Nessuno slot reel libero nel calendario. Aggiungi uno slot reel (o cambia il giorno-reel).":"Nessuno slot libero per pilastro \""+i.pilastro+"\". Aggiungi uno slot dal calendario prima di sviluppare questa idea.","warn",7000);return;}
   i.stato="accettata";
   try{await api("redazione-salva-idea",{idea:i});}catch(e){}
   startComposer(slot,{idea:i});
