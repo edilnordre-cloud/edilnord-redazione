@@ -1511,7 +1511,7 @@ async function pollIdee(times){
 
 /* ============================================================ COMPOSER */
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
-function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||"",primo_commento:c.primo_commento||""}));}catch(e){}}
+function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||"",primo_commento:c.primo_commento||"",reel_dati:c.reel_dati||[],reel_trend:c.reel_trend||null}));}catch(e){}}
 async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);if(!existing)return;const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
 async function eliminaBozza(id){if(!confirm("Eliminare questa bozza?"))return;const slot=slotById(id);if(!slot)return;const row={...slot,stato:"eliminata"};try{await api("redazione-salva-contenuto",{contenuto:row});const idx=S.data.calendario.findIndex(x=>x.id===id);if(idx>=0)S.data.calendario.splice(idx,1);try{localStorage.removeItem('rdz_int_'+id);localStorage.removeItem('rdz_step_'+id);}catch(e){}render();toast("Bozza eliminata.","ok");}catch(e){toast("Errore eliminazione.","err");}}
 function pickSlotThenCompose(extra={}){
@@ -1570,6 +1570,8 @@ function startComposer(slot,extra={}){
     dirty:false, generating:false, uploading:false,
     cta_applicata:slot?slot.cta==="valutatore":false,
     primo_commento:(slot&&slot.primo_commento)||(_savedStep&&_savedStep.primo_commento)||"",
+    reel_dati:(_savedStep&&Array.isArray(_savedStep.reel_dati))?_savedStep.reel_dati:[],
+    reel_trend:(_savedStep&&_savedStep.reel_trend)?_savedStep.reel_trend:null,
     ideaId:idea?idea.id:null
   };
   S.view="composer";render();
@@ -2006,6 +2008,7 @@ async function genTesto(indicazione){
     else{c._genFailed=false;c.titolo=r.titolo||c.titolo;c.caption_ig=r.caption||"";c.testo_blog=r.articolo_html||"";
       if(r.overlay&&r.overlay.length)c.overlay=r.overlay;
       if(r.brief_foto)c.brief_foto=r.brief_foto;
+      c.reel_dati=Array.isArray(r.reel_dati)?r.reel_dati:[];c.reel_trend=r.reel_trend||null;
       c.cta_applicata=!!r.cta_applicata;c.dirty=true;toast("Contenuto generato.","ok");
       saveStepLocal();saveDraft();}
   }catch(e){toast("Errore: "+e.message,"err");}
@@ -2137,53 +2140,51 @@ function previewPanel(){
   const wrap=el("div",{class:"ig-preview"},el("div",{id:"prev-holder"}));
   wrap.querySelector("#prev-holder").append(igCard());
   if(c.tipo==="reel"){
-    if(!ZONE_TABLE)loadZoneTable(()=>updatePreview());
-    const sfondo=c.url_video?"il tuo video montato":(c.foto&&c.foto[0]?"la tua foto caricata":"la mappa disegnata (carica un media per vederlo col tuo girato)");
-    const nota=isReelDati(c)
-      ?("Reel-dati: mappa/barre coi prezzi dalla <b>tua tabella zone</b> (reel-kit/zone-brugherio.json). Sfondo = "+sfondo+". Hook e CTA sono i tuoi.")
-      :("Reel a testo: hook + CTA sul tuo girato, niente mappa prezzi (il tema non è a numeri). Sfondo = "+sfondo+".");
+    const sfondo=c.url_video?"il tuo video montato":(c.foto&&c.foto[0]?"la tua foto caricata":"lo sfondo disegnato (carica un media per vederlo col tuo girato)");
+    const n=(c.reel_dati||[]).length;
+    const nota=n
+      ?("Reel-dati: le barre mostrano <b>i numeri delle tue risposte</b> ("+n+" dato"+(n>1?"i":"")+"), copiati fedeli. Sfondo = "+sfondo+". Hook e CTA sono i tuoi.")
+      :("Reel a testo: hook + CTA sul tuo girato. Nelle risposte non hai dato numeri, quindi niente barre (giusto così: nessun dato inventato). Sfondo = "+sfondo+".");
     wrap.append(el("div",{class:"hint",style:"margin-top:10px;font-size:12px;line-height:1.4",html:nota}));
   }
   return wrap;
 }
-// Tabella prezzi zona: unica fonte dei numeri dei reel-dati. Caricata una volta.
-let ZONE_TABLE=null, ZONE_LOADING=false;
-function loadZoneTable(cb){
-  if(ZONE_TABLE){cb&&cb(ZONE_TABLE);return;}
-  if(ZONE_LOADING)return;
-  ZONE_LOADING=true;
-  fetch("reel-kit/zone-brugherio.json").then(r=>r.json()).then(j=>{ZONE_TABLE=j;ZONE_LOADING=false;cb&&cb(j);}).catch(()=>{ZONE_LOADING=false;});
+// Un reel mostra i numeri solo se Matteo li ha dati nell'intervista (reel_dati estratti verbatim dall'agente).
+function isReelDati(c){return Array.isArray(c.reel_dati)&&c.reel_dati.length>0;}
+// Barre dai dati dell'intervista. Larghezza proporzionale solo se i valori hanno la stessa unità
+// (altrimenti sarebbe fuorviante): il numero VERO sta sempre nell'etichetta, la barra è solo ritmo visivo.
+function reelDatiToBars(pts){
+  const cls=["a","b","c"];
+  const parsed=pts.map(p=>{const s=String(p.valore||"");const m=s.replace(/[.\s]/g,"").match(/\d+/);const unit=s.replace(/[\d.,\s]+/g,"").toLowerCase();return {n:m?parseInt(m[0],10):null,unit};});
+  const sameUnit=parsed.every(x=>x.unit===parsed[0].unit);
+  const nums=parsed.map(x=>x.n).filter(x=>x!=null);
+  const max=nums.length?Math.max.apply(null,nums):1;
+  const fixed=[100,74,52];
+  return pts.map((p,i)=>{
+    let w=(sameUnit&&parsed[i].n!=null&&max>0)?Math.max(28,Math.round(parsed[i].n/max*100)):(fixed[i]||60);
+    return {icon:"📍",name:String(p.etichetta||("Dato "+(i+1))),value:String(p.valore||""),w:w+"%",cls:cls[i]||"a"};
+  });
 }
-// Un reel è "a dati" (infografica prezzi) se pilastro dati o il tema parla di valore/zone/mq.
-function isReelDati(c){
-  if(c.pilastro==="dati")return true;
-  return /prezz|valore|valuta|\bmq\b|quotazion|\bzona\b|\bzone\b|mercato|\bomi\b|metro\s*quadr/i.test(String(c.tema||"")+" "+String(c.titolo||""));
-}
-// Dati per l'anteprima reel: hook + CTA + il TUO media come sfondo; per i reel-dati
-// mappa/barre/trend arrivano dalla tabella zone (numeri che controlli tu, niente AI).
+// Dati per l'anteprima reel: hook + CTA + il TUO media come sfondo. I numeri (barre/trend) sono
+// quelli estratti VERBATIM dalle tue risposte (c.reel_dati / c.reel_trend), niente cifre inventate.
 function reelPreviewData(c){
   const hook=(c.hookScelto&&c.hookScelto.testo)?c.hookScelto.testo:(c.tema||"");
   const cap=String(c.caption_ig||"");
   const lines=cap.split("\n").map(s=>s.trim()).filter(Boolean);
-  const dati=isReelDati(c);
-  const d={handle:"edilnordre",sub:"Immobiliare · Brugherio",modo:dati?"dati":"video"};
+  const pts=Array.isArray(c.reel_dati)?c.reel_dati.filter(p=>p&&String(p.valore||"").trim()):[];
+  const hasTrend=c.reel_trend&&String(c.reel_trend.valore||"").trim();
+  const d={handle:"edilnordre",sub:"Immobiliare · Brugherio"};
+  d.modo=pts.length?(hasTrend?"dati_trend":"dati"):"video";
   if(hook)d.hook=hook;
   if(lines.length)d.ctaSub=lines[lines.length-1];
   if(c.url_video)d.bgVideo=c.url_video;
   else if(c.foto&&c.foto[0])d.bg=c.foto[0];
-  if(dati&&ZONE_TABLE&&Array.isArray(ZONE_TABLE.zone)&&ZONE_TABLE.zone.length){
-    const fmt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,".");
-    const top=ZONE_TABLE.zone.slice().sort((a,b)=>(b.mq||0)-(a.mq||0)).slice(0,3);
-    const max=top[0]&&top[0].mq?top[0].mq:1;const cls=["a","b","c"];const ic=["🏡","🏢","🌳"];
-    d.mapTitle="La mappa del valore · Brugherio";
-    d.zones=top.map(z=>({name:z.nome,value:fmt(z.mq)+" €",w:Math.round((z.mq/max)*100)+"%"}));
-    d.barsTitle="Il divario, in chiaro";
-    d.bars=top.map((z,i)=>({icon:ic[i]||"📍",name:z.nome,value:fmt(z.mq)+" €/mq",w:Math.round((z.mq/max)*100)+"%",cls:cls[i]||"a"}));
-    const hi=top[0],lo=top[top.length-1];
-    if(hi&&lo&&lo.mq)d.barsNote="Tra la zona più cara e la più economica: <b>"+(Math.round((hi.mq/lo.mq)*10)/10).toString().replace(".",",")+"×</b>.";
-    if(ZONE_TABLE.media_citta_mq)d.mapSrc=(ZONE_TABLE.fonte||"Fonte")+" · media città "+fmt(ZONE_TABLE.media_citta_mq)+" €/mq";
-    if(ZONE_TABLE.trend){d.trendTitle="E il mercato sale";if(ZONE_TABLE.trend.pct)d.trendPct=ZONE_TABLE.trend.pct;if(ZONE_TABLE.trend.note)d.trendNote=ZONE_TABLE.trend.note;}
+  if(pts.length){
+    d.barsTitle="I numeri, dalle tue risposte";
+    d.bars=reelDatiToBars(pts);
+    d.barsNote="";
   }
+  if(hasTrend){d.trendTitle="Il trend che hai visto";d.trendPct=String(c.reel_trend.valore).trim();d.trendNote=String(c.reel_trend.nota||"").trim();}
   return d;
 }
 function igCard(){

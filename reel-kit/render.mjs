@@ -28,6 +28,8 @@ const page = await ctx.newPage();
 await page.goto('file://' + join(__dirname, 'template.html'), { waitUntil: 'load' });
 try { await page.evaluate(() => document.fonts && document.fonts.ready); } catch {}
 await page.waitForTimeout(400);
+// Applica modo (dati/video) prima di partire, cosi __dur e la sequenza sono corretti.
+await page.evaluate((m) => { if (m && window.__apply) window.__apply({ modo: m }); }, data.modo);
 const total = await page.evaluate(() => (window.__start && window.__start(), window.__dur || 18600));
 await page.waitForTimeout(total + 700);
 const video = page.video();
