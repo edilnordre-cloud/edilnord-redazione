@@ -2136,21 +2136,54 @@ function previewPanel(){
   const c=S.composer;const p=PILLARS[c.pilastro]||PILLARS.territorio;
   const wrap=el("div",{class:"ig-preview"},el("div",{id:"prev-holder"}));
   wrap.querySelector("#prev-holder").append(igCard());
-  if(c.tipo==="reel")wrap.append(el("div",{class:"hint",style:"margin-top:10px;font-size:12px;line-height:1.4"},
-    "Anteprima animata del reel: lo sfondo è "+(c.url_video?"il tuo video montato":(c.foto&&c.foto[0]?"la tua foto caricata":"la mappa disegnata (carica un media per vederlo col tuo girato)"))+". I testi (hook, CTA) sono i tuoi; i prezzi per zona li compila n8n al render."));
+  if(c.tipo==="reel"){
+    if(!ZONE_TABLE)loadZoneTable(()=>updatePreview());
+    const sfondo=c.url_video?"il tuo video montato":(c.foto&&c.foto[0]?"la tua foto caricata":"la mappa disegnata (carica un media per vederlo col tuo girato)");
+    const nota=isReelDati(c)
+      ?("Reel-dati: mappa/barre coi prezzi dalla <b>tua tabella zone</b> (reel-kit/zone-brugherio.json). Sfondo = "+sfondo+". Hook e CTA sono i tuoi.")
+      :("Reel a testo: hook + CTA sul tuo girato, niente mappa prezzi (il tema non è a numeri). Sfondo = "+sfondo+".");
+    wrap.append(el("div",{class:"hint",style:"margin-top:10px;font-size:12px;line-height:1.4",html:nota}));
+  }
   return wrap;
 }
-// Dati per l'anteprima reel: hook + CTA + il TUO media come sfondo. I campi non passati
-// restano quelli d'esempio del template (mappa/prezzi/trend) finché l'agente non li genera.
+// Tabella prezzi zona: unica fonte dei numeri dei reel-dati. Caricata una volta.
+let ZONE_TABLE=null, ZONE_LOADING=false;
+function loadZoneTable(cb){
+  if(ZONE_TABLE){cb&&cb(ZONE_TABLE);return;}
+  if(ZONE_LOADING)return;
+  ZONE_LOADING=true;
+  fetch("reel-kit/zone-brugherio.json").then(r=>r.json()).then(j=>{ZONE_TABLE=j;ZONE_LOADING=false;cb&&cb(j);}).catch(()=>{ZONE_LOADING=false;});
+}
+// Un reel è "a dati" (infografica prezzi) se pilastro dati o il tema parla di valore/zone/mq.
+function isReelDati(c){
+  if(c.pilastro==="dati")return true;
+  return /prezz|valore|valuta|\bmq\b|quotazion|\bzona\b|\bzone\b|mercato|\bomi\b|metro\s*quadr/i.test(String(c.tema||"")+" "+String(c.titolo||""));
+}
+// Dati per l'anteprima reel: hook + CTA + il TUO media come sfondo; per i reel-dati
+// mappa/barre/trend arrivano dalla tabella zone (numeri che controlli tu, niente AI).
 function reelPreviewData(c){
   const hook=(c.hookScelto&&c.hookScelto.testo)?c.hookScelto.testo:(c.tema||"");
   const cap=String(c.caption_ig||"");
   const lines=cap.split("\n").map(s=>s.trim()).filter(Boolean);
-  const d={handle:"edilnordre",sub:"Immobiliare · Brugherio"};
+  const dati=isReelDati(c);
+  const d={handle:"edilnordre",sub:"Immobiliare · Brugherio",modo:dati?"dati":"video"};
   if(hook)d.hook=hook;
   if(lines.length)d.ctaSub=lines[lines.length-1];
   if(c.url_video)d.bgVideo=c.url_video;
   else if(c.foto&&c.foto[0])d.bg=c.foto[0];
+  if(dati&&ZONE_TABLE&&Array.isArray(ZONE_TABLE.zone)&&ZONE_TABLE.zone.length){
+    const fmt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+    const top=ZONE_TABLE.zone.slice().sort((a,b)=>(b.mq||0)-(a.mq||0)).slice(0,3);
+    const max=top[0]&&top[0].mq?top[0].mq:1;const cls=["a","b","c"];const ic=["🏡","🏢","🌳"];
+    d.mapTitle="La mappa del valore · Brugherio";
+    d.zones=top.map(z=>({name:z.nome,value:fmt(z.mq)+" €",w:Math.round((z.mq/max)*100)+"%"}));
+    d.barsTitle="Il divario, in chiaro";
+    d.bars=top.map((z,i)=>({icon:ic[i]||"📍",name:z.nome,value:fmt(z.mq)+" €/mq",w:Math.round((z.mq/max)*100)+"%",cls:cls[i]||"a"}));
+    const hi=top[0],lo=top[top.length-1];
+    if(hi&&lo&&lo.mq)d.barsNote="Tra la zona più cara e la più economica: <b>"+(Math.round((hi.mq/lo.mq)*10)/10).toString().replace(".",",")+"×</b>.";
+    if(ZONE_TABLE.media_citta_mq)d.mapSrc=(ZONE_TABLE.fonte||"Fonte")+" · media città "+fmt(ZONE_TABLE.media_citta_mq)+" €/mq";
+    if(ZONE_TABLE.trend){d.trendTitle="E il mercato sale";if(ZONE_TABLE.trend.pct)d.trendPct=ZONE_TABLE.trend.pct;if(ZONE_TABLE.trend.note)d.trendNote=ZONE_TABLE.trend.note;}
+  }
   return d;
 }
 function igCard(){

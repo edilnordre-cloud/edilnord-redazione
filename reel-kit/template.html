@@ -140,18 +140,23 @@
   }
   applyData(window.REEL || DEFAULT);
 
-  var durs=[2800,4000,3600,3600,4600];
+  // Durata per singolo frame (indice = data-i). ORDER = quali frame giocare e in che ordine.
+  // modo "dati" = tutti (hook, mappa, barre, trend, cta). modo "video" = solo hook + cta.
+  var DURS=[2800,4000,3600,3600,4600];
+  var ORDER=[0,1,2,3,4];
   var frames=[].slice.call(document.querySelectorAll('.frame'));
   var prog=document.getElementById('prog');
-  var bars=frames.map(function(){var s=document.createElement('div');s.className='seg';var f=document.createElement('i');s.appendChild(f);prog.appendChild(s);return f;});
-  function show(i){frames.forEach(function(f){f.classList.remove('on');});frames[i].classList.add('on');
-    bars.forEach(function(b,j){b.style.transition='none';b.style.width=(j<i?100:0)+'%';});
-    var b=bars[i];void b.offsetWidth;b.style.transition='width '+durs[i]+'ms linear';b.style.width='100%';
-    if(i+1<frames.length)setTimeout(function(){show(i+1);},durs[i]);}
-  window.__dur=durs.reduce(function(a,c){return a+c;},0);
+  var segEls=[];
+  function buildProg(){prog.innerHTML="";segEls=ORDER.map(function(){var s=document.createElement('div');s.className='seg';var f=document.createElement('i');s.appendChild(f);prog.appendChild(s);return f;});}
+  function setModo(modo){ORDER=(modo==="video")?[0,4]:[0,1,2,3,4];window.__dur=ORDER.reduce(function(a,i){return a+DURS[i];},0);buildProg();}
+  function show(k){var fi=ORDER[k];frames.forEach(function(f){f.classList.remove('on');});frames[fi].classList.add('on');
+    segEls.forEach(function(b,j){b.style.transition='none';b.style.width=(j<k?100:0)+'%';});
+    var b=segEls[k];void b.offsetWidth;b.style.transition='width '+DURS[fi]+'ms linear';b.style.width='100%';
+    if(k+1<ORDER.length)setTimeout(function(){show(k+1);},DURS[fi]);}
+  setModo("dati");
   window.__start=function(){show(0);};
-  // Pilotaggio dall'app (anteprima in iframe): applica dati e cicla in loop.
-  window.__apply=function(nd){applyData(nd);};
+  // Pilotaggio dall'app (anteprima in iframe): applica dati (+ modo) e cicla in loop.
+  window.__apply=function(nd){applyData(nd);if(nd&&nd.modo)setModo(nd.modo);};
   window.__loop=function(){(function run(){show(0);setTimeout(run,window.__dur+900);})();};
 </script>
 </body></html>
