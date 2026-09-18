@@ -7,7 +7,7 @@
   html,body{width:360px;height:640px;overflow:hidden;background:#0b120d;font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   .stage{position:absolute;inset:0}
   .bg{position:absolute;inset:0;transform:scale(1.04);animation:ken 18s linear forwards}
-  .bg img{width:100%;height:100%;object-fit:cover}
+  .bg img,.bg video{width:100%;height:100%;object-fit:cover}
   @keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.12)}}
   .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,18,13,.5) 0%,rgba(11,18,13,.12) 30%,rgba(11,18,13,.42) 60%,rgba(11,18,13,.92) 100%)}
   .prog{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:4px;z-index:6}
@@ -99,8 +99,8 @@
   <div class="audio"><span>♫</span><div class="track"><span id="audio"></span></div></div>
 </div>
 <script>
-  // Dati di default (esempio) — sovrascritti da window.REEL iniettato dal render.
-  var D = window.REEL || {
+  // Dati di default (esempio) — sovrascritti da window.REEL (render) o da __apply (anteprima app).
+  var DEFAULT = {
     handle:"edilnordre", sub:"Immobiliare · Brugherio",
     hook:"A Brugherio<br>casa tua vale<br><em>1.000</em> o <em>2.810</em>€/mq?",
     hookSub:"Cambia tutto in 2 km. Dipende dalla via.",
@@ -118,21 +118,27 @@
     bg:null
   };
   function set(id,html){var e=document.getElementById(id);if(e&&html!=null)e.innerHTML=html;}
-  set("hook",D.hook);set("hookSub",D.hookSub);set("mapTitle",D.mapTitle);set("mapSrc",D.mapSrc);
-  set("barsTitle",D.barsTitle);set("barsNote",D.barsNote);set("trendTitle",D.trendTitle);
-  set("trendPct",D.trendPct);set("trendNote",D.trendNote);set("ctaQ",D.ctaQ);set("ctaSub",D.ctaSub);set("audio",D.audio);
-  if(D.handle){document.getElementById("who").innerHTML=D.handle+"<span>"+(D.sub||"")+"</span>";}
-  // mappa: pin
-  (D.zones||[]).slice(0,3).forEach(function(z,i){set("z"+i+"v",z.value);set("z"+i+"n",z.name);});
-  // barre
-  var bc=document.getElementById("bars");
-  (D.bars||[]).forEach(function(b){
-    var row=document.createElement("div");row.className="barrow";
-    row.innerHTML='<div class="lab">'+(b.icon||"")+" "+b.name+'</div><div class="tr"><div class="fl '+(b.cls||"a")+'" style="--w:'+b.w+'">'+b.value+'</div></div>';
-    bc.appendChild(row);
-  });
-  // sfondo foto (se fornito)
-  if(D.bg){document.getElementById("mapbg").style.display="none";var im=document.createElement("img");im.src=D.bg;document.getElementById("bg").appendChild(im);}
+  // Applica i dati: i campi assenti restano quelli già a schermo (default esempio).
+  function applyData(D){
+    D=D||{};
+    set("hook",D.hook);set("hookSub",D.hookSub);set("mapTitle",D.mapTitle);set("mapSrc",D.mapSrc);
+    set("barsTitle",D.barsTitle);set("barsNote",D.barsNote);set("trendTitle",D.trendTitle);
+    set("trendPct",D.trendPct);set("trendNote",D.trendNote);set("ctaQ",D.ctaQ);set("ctaSub",D.ctaSub);set("audio",D.audio);
+    if(D.handle){document.getElementById("who").innerHTML=D.handle+"<span>"+(D.sub||"")+"</span>";}
+    if(D.zones){D.zones.slice(0,3).forEach(function(z,i){set("z"+i+"v",z.value);set("z"+i+"n",z.name);});}
+    if(D.bars){var bc=document.getElementById("bars");bc.innerHTML="";D.bars.forEach(function(b){
+      var row=document.createElement("div");row.className="barrow";
+      row.innerHTML='<div class="lab">'+(b.icon||"")+" "+b.name+'</div><div class="tr"><div class="fl '+(b.cls||"a")+'" style="--w:'+b.w+'">'+b.value+'</div></div>';
+      bc.appendChild(row);
+    });}
+    if(D.bg||D.bgVideo){
+      var bgEl=document.getElementById("bg");var mb=document.getElementById("mapbg");if(mb)mb.style.display="none";
+      var old=bgEl.querySelector("img,video");if(old)old.remove();
+      if(D.bgVideo){var v=document.createElement("video");v.src=D.bgVideo;v.muted=true;v.loop=true;v.autoplay=true;v.playsInline=true;v.setAttribute("playsinline","");bgEl.appendChild(v);}
+      else{var im=document.createElement("img");im.src=D.bg;bgEl.appendChild(im);}
+    }
+  }
+  applyData(window.REEL || DEFAULT);
 
   var durs=[2800,4000,3600,3600,4600];
   var frames=[].slice.call(document.querySelectorAll('.frame'));
@@ -144,5 +150,8 @@
     if(i+1<frames.length)setTimeout(function(){show(i+1);},durs[i]);}
   window.__dur=durs.reduce(function(a,c){return a+c;},0);
   window.__start=function(){show(0);};
+  // Pilotaggio dall'app (anteprima in iframe): applica dati e cicla in loop.
+  window.__apply=function(nd){applyData(nd);};
+  window.__loop=function(){(function run(){show(0);setTimeout(run,window.__dur+900);})();};
 </script>
 </body></html>
