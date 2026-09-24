@@ -43,6 +43,8 @@ jobs:
         run: |
           npm install
           npx playwright install --with-deps chromium
+          # ffmpeg serve per l'mp4 H.264 (Instagram non accetta webm); le immagini runner recenti non lo includono.
+          command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
 
       # Il JSON passa da variabile d'ambiente: apostrofi e virgolette del testo non rompono la shell.
       - name: Prepara i dati
@@ -74,7 +76,7 @@ jobs:
           JOB_TOKEN: ${{ inputs.job_token }}
         run: |
           set -e
-          FILE=$(ls out/reel.mp4 out/reel.webm 2>/dev/null | head -1)
+          FILE=out/reel.mp4
           RES=$(curl -s -X POST https://api.cloudinary.com/v1_1/duwp3az9m/video/upload \
             -F file=@"$FILE" -F upload_preset=edilnordre -F folder=reel --max-time 300)
           URL=$(printf '%s' "$RES" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).secure_url||'')}catch(e){}})")
