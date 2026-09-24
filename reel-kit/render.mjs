@@ -14,6 +14,8 @@ function arg(name, def) { const i = args.indexOf(name); return i >= 0 ? args[i +
 const dataPath = resolve(arg('--data', join(__dirname, 'data.example.json')));
 const outPath = resolve(arg('--out', join(__dirname, 'out', 'reel.mp4')));
 const data = JSON.parse(readFileSync(dataPath, 'utf8'));
+// Il Chromium di Playwright non decodifica H.264: per i video Cloudinary chiediamo la versione webm.
+if (data.bgVideo && /res\.cloudinary\.com/.test(data.bgVideo)) data.bgVideo = data.bgVideo.replace(/\.(mp4|mov|m4v)(\?.*)?$/i, '.webm');
 const tmpDir = join(__dirname, 'out');
 mkdirSync(tmpDir, { recursive: true });
 
@@ -28,8 +30,8 @@ const page = await ctx.newPage();
 await page.goto('file://' + join(__dirname, 'template.html'), { waitUntil: 'load' });
 try { await page.evaluate(() => document.fonts && document.fonts.ready); } catch {}
 await page.waitForTimeout(400);
-// Applica modo (dati/video) prima di partire, cosi __dur e la sequenza sono corretti.
-await page.evaluate((m) => { if (m && window.__apply) window.__apply({ modo: m }); }, data.modo);
+// Il template legge dati e modo da window.REEL: qui basta partire (dopo che l'eventuale video di sfondo è pronto).
+await page.evaluate(() => new Promise(r => { const v = document.querySelector('#bg video'); if (!v || v.readyState >= 3) return r(); v.addEventListener('canplay', () => r(), { once: true }); setTimeout(r, 8000); }));
 const total = await page.evaluate(() => (window.__start && window.__start(), window.__dur || 18600));
 await page.waitForTimeout(total + 700);
 const video = page.video();

@@ -1,6 +1,9 @@
 name: Reel
 
-# Genera un reel infografico (mp4 1080x1920) dal reel-kit. Gratis, on-demand.
+# Genera un reel infografico (mp4 1080x1920) dal reel-kit. Gratis.
+# - A mano: Actions → Reel → Run workflow (data_json vuoto = esempio). L'mp4 resta come artifact scaricabile.
+# - Dall'app: n8n (workflow "Redazione – Render Reel") lancia questo workflow con data_json + content_id.
+#   A fine render l'mp4 va su Cloudinary e n8n lo aggancia al contenuto (url_video) + avviso Telegram.
 on:
   workflow_dispatch:
     inputs:
@@ -8,10 +11,19 @@ on:
         description: "Dati del reel (JSON). Lascia vuoto per usare data.example.json"
         required: false
         default: ""
+      content_id:
+        description: "id del contenuto nel Calendario (lo passa n8n). Vuoto = solo artifact"
+        required: false
+        default: ""
+
+concurrency:
+  group: reel-${{ inputs.content_id || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   render:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: reel-kit
@@ -27,10 +39,14 @@ jobs:
           npm install
           npx playwright install --with-deps chromium
 
+      # Il JSON passa da variabile d'ambiente: apostrofi e virgolette del testo non rompono la shell.
       - name: Prepara i dati
+        env:
+          DATA_JSON: ${{ inputs.data_json }}
         run: |
-          if [ -n "${{ inputs.data_json }}" ]; then
-            printf '%s' '${{ inputs.data_json }}' > data.json
+          if [ -n "$DATA_JSON" ]; then
+            printf '%s' "$DATA_JSON" > data.json
+            node -e "JSON.parse(require('fs').readFileSync('data.json','utf8'))"
           else
             cp data.example.json data.json
           fi
@@ -44,3 +60,31 @@ jobs:
           name: reel-mp4
           path: reel-kit/out/reel.*
           if-no-files-found: error
+
+      - name: Cloudinary + aggancio al contenuto
+        id: cb
+        if: ${{ inputs.content_id != '' }}
+        env:
+          CONTENT_ID: ${{ inputs.content_id }}
+          REDAZIONE_KEY: ${{ secrets.REDAZIONE_KEY }}
+        run: |
+          set -e
+          FILE=$(ls out/reel.mp4 out/reel.webm 2>/dev/null | head -1)
+          RES=$(curl -s -X POST https://api.cloudinary.com/v1_1/duwp3az9m/video/upload \
+            -F file=@"$FILE" -F upload_preset=edilnordre -F folder=reel --max-time 300)
+          URL=$(printf '%s' "$RES" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).secure_url||'')}catch(e){}})")
+          if [ -z "$URL" ]; then echo "Upload Cloudinary fallito: $RES"; OK=false; else OK=true; fi
+          BODY=$(node -e "process.stdout.write(JSON.stringify({id:process.env.CONTENT_ID,url:process.argv[1],ok:process.argv[2]==='true',run:process.env.GITHUB_SERVER_URL+'/'+process.env.GITHUB_REPOSITORY+'/actions/runs/'+process.env.GITHUB_RUN_ID}))" "$URL" "$OK")
+          curl -s -X POST https://n8n.edilnordre.it/webhook/redazione-reel-renderizzato \
+            -H "Content-Type: application/json" -H "X-Redazione-Key: $REDAZIONE_KEY" -d "$BODY" --max-time 60
+          [ "$OK" = true ]
+
+      - name: Avvisa se il render è fallito
+        if: ${{ failure() && inputs.content_id != '' && steps.cb.outcome == 'skipped' }}
+        env:
+          CONTENT_ID: ${{ inputs.content_id }}
+          REDAZIONE_KEY: ${{ secrets.REDAZIONE_KEY }}
+        run: |
+          BODY=$(node -e "process.stdout.write(JSON.stringify({id:process.env.CONTENT_ID,url:'',ok:false,run:process.env.GITHUB_SERVER_URL+'/'+process.env.GITHUB_REPOSITORY+'/actions/runs/'+process.env.GITHUB_RUN_ID}))")
+          curl -s -X POST https://n8n.edilnordre.it/webhook/redazione-reel-renderizzato \
+            -H "Content-Type: application/json" -H "X-Redazione-Key: $REDAZIONE_KEY" -d "$BODY" --max-time 60 || true
