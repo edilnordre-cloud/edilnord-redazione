@@ -1511,7 +1511,7 @@ async function pollIdee(times){
 
 /* ============================================================ COMPOSER */
 const STEPS=[["idea","Idea"],["intervista","Intervista"],["testo","Testo"],["hook","Hook"],["foto","Media"],["anteprima","Anteprima"],["programma","Programma"]];
-function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||"",primo_commento:c.primo_commento||"",reel_dati:c.reel_dati||[],reel_trend:c.reel_trend||null}));}catch(e){}}
+function saveStepLocal(){const c=S.composer;if(c&&c.id)try{localStorage.setItem('rdz_step_'+c.id,JSON.stringify({step:c.step,hookScelto:c.hookScelto,caption_ig:c.caption_ig||"",testo_blog:c.testo_blog||"",titolo:c.titolo||"",primo_commento:c.primo_commento||"",reel_dati:c.reel_dati||[],reel_trend:c.reel_trend||null,reelStile:c.reelStile||"",reel_hooksub:c.reel_hooksub||"",reel_ctaq:c.reel_ctaq||"",reel_ctasub:c.reel_ctasub||""}));}catch(e){}}
 async function silentSaveDraft(){const c=S.composer;if(!c)return;const existing=slotById(c.id);if(!existing)return;const stato=existing&&["pronto","approvato","ok_confermato"].includes(existing.stato)?existing.stato:"bozza";const row=composerToRow(stato);try{await api("redazione-salva-contenuto",{contenuto:row});upsertLocal(row);c.dirty=false;render();}catch(e){}}
 async function eliminaBozza(id){if(!confirm("Eliminare questa bozza?"))return;const slot=slotById(id);if(!slot)return;const row={...slot,stato:"eliminata"};try{await api("redazione-salva-contenuto",{contenuto:row});const idx=S.data.calendario.findIndex(x=>x.id===id);if(idx>=0)S.data.calendario.splice(idx,1);try{localStorage.removeItem('rdz_int_'+id);localStorage.removeItem('rdz_step_'+id);}catch(e){}render();toast("Bozza eliminata.","ok");}catch(e){toast("Errore eliminazione.","err");}}
 function pickSlotThenCompose(extra={}){
@@ -1572,6 +1572,11 @@ function startComposer(slot,extra={}){
     primo_commento:(slot&&slot.primo_commento)||(_savedStep&&_savedStep.primo_commento)||"",
     reel_dati:(_savedStep&&Array.isArray(_savedStep.reel_dati))?_savedStep.reel_dati:[],
     reel_trend:(_savedStep&&_savedStep.reel_trend)?_savedStep.reel_trend:null,
+    // Reel: si parte dall'infografica; i media sono un'aggiunta facoltativa (vedi reelPanel)
+    reelStile:(_savedStep&&_savedStep.reelStile)||((slot&&slot.url_video&&!isServerVideo(slot.url_video))?"media":((slot&&slot.url_foto)?"info_media":"info")),
+    reel_hooksub:(_savedStep&&_savedStep.reel_hooksub)||"",
+    reel_ctaq:(_savedStep&&_savedStep.reel_ctaq)||"",
+    reel_ctasub:(_savedStep&&_savedStep.reel_ctasub)||"",
     ideaId:idea?idea.id:null
   };
   S.view="composer";render();
@@ -1585,7 +1590,7 @@ function ComposerView(){
     const panel=stepPanel();
     const bars=panel.querySelectorAll(".cbar");
     if(bars.length)bars[bars.length-1].classList.add("m-stick");
-    frag.append(el("div",{class:"cwrap"},panel,c.step==="anteprima"?previewPanel():null));
+    frag.append(el("div",{class:"cwrap"},panel,(c.step==="anteprima"||(c.tipo==="reel"&&c.step==="foto"))?previewPanel():null));
     return frag;
   }
   frag.append(el("div",{class:"phead"},
@@ -1617,7 +1622,7 @@ function ComposerView(){
 function stepGuards(){
   const c=S.composer;
   const hasIntervista=c.intervista&&c.intervista.risposte&&c.intervista.risposte.some(r=>String(r||"").trim());
-  const hasFoto=c.tipo==="reel"?(c.url_video||c.foto.length>=3):c.foto.length>0;
+  const hasFoto=c.tipo==="reel"?reelMediaOk(c):c.foto.length>0;
   const serveBlog=(c.tipo==="entrambi"||c.tipo==="articolo_blog");
   const hasTesto=!!(c.caption_ig&&(!serveBlog||c.testo_blog));
   const hasHook=!!(c.hookScelto&&c.hookScelto.testo);
@@ -1817,8 +1822,13 @@ function stepPanel(){
     }
     panel.append(el("div",{class:"cbar"},
       el("button",{class:"btn btn-g",onclick:()=>{c.step="testo";render();}},"← Indietro"),
-      el("button",{class:"btn btn-p",disabled:!g.hasHook,onclick:()=>{c.step="foto";render();}},"Aggiungi i media →")));
+      c.tipo==="reel"
+        ?el("button",{class:"btn btn-p",disabled:!g.hasHook,onclick:()=>{c.step="anteprima";render();}},"Vedi l'anteprima →")
+        :el("button",{class:"btn btn-p",disabled:!g.hasHook,onclick:()=>{c.step="foto";render();}},"Aggiungi i media →")));
     if(!g.hasHook&&c.hooks&&c.hooks.length)panel.append(el("div",{class:"gate-warn"},"🎯","Seleziona un hook per procedere."));
+  }
+  else if(c.tipo==="reel"&&(c.step==="foto"||c.step==="anteprima")){
+    reelPanel(panel);
   }
   else if(c.step==="foto"){
     panel.append(el("h2",{},"Media reali"),el("p",{class:"pd"},"Basta 1 foto per procedere. Se ne carichi più di una diventa un carosello Instagram."));
@@ -1893,7 +1903,7 @@ function stepPanel(){
     panel.append(el("div",{class:"cbar"},
       el("button",{class:"btn btn-g",onclick:saveDraft},"Salva come bozza"),
       el("button",{class:"btn btn-p",disabled:!canReady,onclick:setPronto},"✓ Segna come pronto")));
-    if(!canReady)panel.append(el("div",{class:"gate-warn"},"⚠️","Per \"pronto\" servono intervista compilata, almeno una foto reale e data+ora."));
+    if(!canReady)panel.append(el("div",{class:"gate-warn"},"⚠️",c.tipo==="reel"?"Per \"pronto\" servono intervista compilata, i media richiesti dallo stile del reel e data+ora.":"Per \"pronto\" servono intervista compilata, almeno una foto reale e data+ora."));
   }
   return panel;
 }
@@ -1906,6 +1916,49 @@ function pilPicker(){const c=S.composer;return el("div",{class:"field",style:"fl
   el("select",{class:"sel",onchange:e=>{c.pilastro=e.target.value;c.tipo=tipoDaPilastro(c.pilastro);c.dirty=true;render();}},
     ...["territorio","dati","reale","reel"].map(p=>{const o=el("option",{value:p},PILLARS[p].emoji+" "+PILLARS[p].label+" — "+PILLARS[p].perc);if(c.pilastro===p)o.selected=true;return o;})));}
 
+// Video prodotti dal server (montaggio n8n o render infografica) finiscono nella cartella Cloudinary "reel/";
+// quelli caricati da te in "contenuti/". Un video del server non è mai "il tuo media".
+function isServerVideo(u){return /\/reel\//.test(String(u||""));}
+function userVideo(c){return c.url_video&&!isServerVideo(c.url_video)?c.url_video:"";}
+function reelMediaOk(c){
+  if(c.reelStile==="info")return true;
+  if(c.reelStile==="info_media")return c.foto.length>0||!!userVideo(c);
+  return !!(c.url_video||c.foto.length>=3);
+}
+const REEL_STILI=[["info","Solo infografica","Sfondo grafico del brand: nessun media da caricare"],
+  ["info_media","Infografica + media","Le tue foto (cambiano a ogni scena) o un tuo video sotto hook, numeri e CTA"],
+  ["media","Solo media","Slideshow delle tue foto con testo sopra, oppure il tuo MP4 pronto"]];
+let _prevT=null;function updatePreviewSoon(){clearTimeout(_prevT);_prevT=setTimeout(updatePreview,450);}
+function reelPanel(panel){
+  const c=S.composer;const g=stepGuards();
+  panel.append(el("h2",{},"Anteprima reel"),el("p",{class:"pd"},"Parti dall'infografica. Se vuoi, aggiungi i tuoi media: l'anteprima si aggiorna subito ed è il video che esce su Instagram."));
+  panel.append(el("div",{class:"reel-modes"},...REEL_STILI.map(([k,t,d])=>el("button",{class:"rmode"+(c.reelStile===k?" on":""),
+    onclick:()=>{c.reelStile=k;c.dirty=true;saveStepLocal();render();}},el("div",{class:"rt"},t),el("div",{class:"rdz"},d)))));
+  const txt=(label,key,ph,hint)=>field(label,input(c[key],v=>{c[key]=v;c.dirty=true;saveStepLocal();updatePreviewSoon();},ph),hint);
+  if(c.reelStile!=="media"){
+    panel.append(txt("Sottotitolo dell'hook (facoltativo)","reel_hooksub","Es. In 2 km cambia tutto. Dipende dalla via."));
+    panel.append(txt("Titolo del finale","reel_ctaq",REEL_CTAQ_DEFAULT.replace(/\*/g,""),"Metti tra *asterischi* la parola da colorare. Vuoto = \""+REEL_CTAQ_DEFAULT.replace(/\*/g,"")+"\"."));
+    panel.append(txt("Testo del finale","reel_ctasub",reelCtaSubDefault(c)||"Es. Scrivimi la via in DM: ti dico quanto vale casa tua."));
+  }
+  if(c.reelStile==="info_media"){
+    panel.append(el("label",{style:"font-weight:600;font-size:13px;margin:6px 0 8px;display:block"},"I tuoi media"));
+    panel.append(isMobile()?mMediaMobile("image"):mediaUploader("image"));
+    if(!c.foto.length)panel.append(isMobile()?mMediaMobile("mp4"):mediaUploader("mp4"));
+    else panel.append(el("div",{class:"hint",style:"margin-bottom:12px"},"Con le foto il video di sfondo non serve: se preferisci un video, togli le foto."));
+  }
+  if(c.reelStile==="media"){
+    panel.append(reelModes());
+    if(c.reelMode==="foto")panel.append(isMobile()?mMediaMobile("image"):mediaUploader("image"));
+    if(c.reelMode==="clip")panel.append(mediaUploader("video-clips"));
+    if(c.reelMode==="mp4")panel.append(mediaUploader("mp4"));
+    if(c.reelMode==="foto"||c.reelMode==="clip")panel.append(overlayEditor());
+  }
+  panel.append(field("Caption",textarea(c.caption_ig,v=>{c.caption_ig=v;c.dirty=true;updatePreviewSoon();})));
+  panel.append(el("div",{class:"cbar"},
+    el("button",{class:"btn btn-g",onclick:()=>{c.step="hook";render();}},"← Hook"),
+    el("button",{class:"btn btn-p",disabled:!g.hasFoto,onclick:()=>{c.step="programma";render();}},"Programma →")));
+  if(!g.hasFoto)panel.append(el("div",{class:"gate-warn"},"📷",c.reelStile==="info_media"?"Carica almeno una foto o un video, oppure scegli \"Solo infografica\".":"Servono un MP4 pronto oppure ≥3 foto/clip per lo slideshow."));
+}
 function reelModes(){const c=S.composer;
   const modes=[["foto","5-8 foto","Il server monta lo slideshow"],["clip","4-6 clip video","Concatenate con overlay (meglio: c'è movimento)"],["mp4","MP4 pronto","Montato in Canva Pro, va dritto in coda"]];
   return el("div",{},el("label",{style:"font-weight:600;font-size:13px;margin-bottom:8px;display:block"},"Come crei il Reel"),
@@ -1915,7 +1968,7 @@ function reelModes(){const c=S.composer;
 function overlayEditor(){const c=S.composer;
   if(!c.overlay.length&&c.caption_ig){c.overlay=[c.titolo||"",""].filter(Boolean);}
   const box=el("div",{class:"field"},el("label",{},"Testo overlay (la prima riga è l'hook)"),
-    ...([0,1,2,3,4].map(i=>{const v=c.overlay[i]||"";return input(v,val=>{c.overlay[i]=val;c.dirty=true;},"Riga "+(i+1)+(i===0?" — hook con numero/luogo/domanda":""));})));
+    ...([0,1,2,3,4].map(i=>{const v=c.overlay[i]||"";return input(v,val=>{c.overlay[i]=val;c.dirty=true;updatePreviewSoon();},"Riga "+(i+1)+(i===0?" — hook con numero/luogo/domanda":""));})));
   return box;
 }
 function mediaUploader(kind){
@@ -2140,11 +2193,13 @@ function previewPanel(){
   const wrap=el("div",{class:"ig-preview"},el("div",{id:"prev-holder"}));
   wrap.querySelector("#prev-holder").append(igCard());
   if(c.tipo==="reel"){
-    const sfondo=c.url_video?"il tuo video montato":(c.foto&&c.foto[0]?"la tua foto caricata":"lo sfondo disegnato (carica un media per vederlo col tuo girato)");
     const n=(c.reel_dati||[]).length;
-    const nota=n
-      ?("Reel-dati: le barre mostrano <b>i numeri delle tue risposte</b> ("+n+" dato"+(n>1?"i":"")+"), copiati fedeli. Sfondo = "+sfondo+". Hook e CTA sono i tuoi.")
-      :("Reel a testo: hook + CTA sul tuo girato. Nelle risposte non hai dato numeri, quindi niente barre (giusto così: nessun dato inventato). Sfondo = "+sfondo+".");
+    const st=c.reelStile;
+    const sfondo=st==="info"?"grafico del brand":(c.foto.length?(c.foto.length>1?c.foto.length+" tue foto, una per scena":"la tua foto"):(userVideo(c)?"il tuo video":"grafico del brand finché non carichi un media"));
+    const nota=st==="media"
+      ?(c.url_video?"Solo media: esce il tuo MP4 così com'è.":"Solo media: anteprima indicativa dello slideshow (2,5 s per foto, righe di testo sopra). Il video vero lo monta il server quando segni \"pronto\".")
+      :((n?("Numeri: <b>quelli delle tue risposte</b> ("+n+" dato"+(n>1?"i":"")+"), copiati fedeli. "):"Nelle risposte non hai dato numeri, quindi niente barre (nessun dato inventato). ")
+        +"Sfondo: "+sfondo+". Quando segni \"pronto\" il server registra <b>esattamente questa animazione</b> in mp4 (3-5 minuti, avviso su Telegram).");
     wrap.append(el("div",{class:"hint",style:"margin-top:10px;font-size:12px;line-height:1.4",html:nota}));
   }
   return wrap;
@@ -2165,26 +2220,40 @@ function reelDatiToBars(pts){
     return {icon:"📍",name:String(p.etichetta||("Dato "+(i+1))),value:String(p.valore||""),w:w+"%",cls:cls[i]||"a"};
   });
 }
-// Dati per l'anteprima reel: hook + CTA + il TUO media come sfondo. I numeri (barre/trend) sono
-// quelli estratti VERBATIM dalle tue risposte (c.reel_dati / c.reel_trend), niente cifre inventate.
+// Dati del reel (anteprima in-app E render mp4: stesso oggetto, quindi quello che vedi è quello che esce).
+// I numeri (barre/trend) sono quelli estratti VERBATIM dalle tue risposte (c.reel_dati / c.reel_trend).
+const REEL_CTAQ_DEFAULT="Ti è utile? *Salvalo*";
+// *parola* → parola evidenziata; il resto è testo puro (niente HTML dall'input).
+function reelTxt(t){return esc(String(t||"").trim()).replace(/\*([^*]+)\*/g,"<em>$1</em>");}
+function reelCtaSubDefault(c){
+  const lines=String(c.caption_ig||"").split("\n").map(s=>s.trim()).filter(l=>l&&!/^#/.test(l)&&!/^(#\S+\s*)+$/.test(l));
+  return lines.length?lines[lines.length-1]:"";
+}
 function reelPreviewData(c){
   const hook=(c.hookScelto&&c.hookScelto.testo)?c.hookScelto.testo:(c.tema||"");
-  const cap=String(c.caption_ig||"");
-  const lines=cap.split("\n").map(s=>s.trim()).filter(Boolean);
   const pts=Array.isArray(c.reel_dati)?c.reel_dati.filter(p=>p&&String(p.valore||"").trim()):[];
   const hasTrend=c.reel_trend&&String(c.reel_trend.valore||"").trim();
-  const d={handle:"edilnordre",sub:"Immobiliare · Brugherio"};
+  const st=c.reelStile||"info";
+  const d={bgStyle:"plain"};
+  if(st==="media"){
+    if(c.url_video){d.modo="mp4";d.bgVideo=c.url_video;}
+    else{d.modo="media";d.bgList=c.foto.slice();d.overlay=(c.overlay||[]).map(x=>esc(String(x||"").trim())).filter(Boolean);}
+    return d;
+  }
   d.modo=pts.length?(hasTrend?"dati_trend":"dati"):"video";
-  if(hook)d.hook=hook;
-  if(lines.length)d.ctaSub=lines[lines.length-1];
-  if(c.url_video)d.bgVideo=c.url_video;
-  else if(c.foto&&c.foto[0])d.bg=c.foto[0];
+  d.hook=reelTxt(hook);
+  d.hookSub=reelTxt(c.reel_hooksub);
+  d.ctaQ=reelTxt(c.reel_ctaq||REEL_CTAQ_DEFAULT);
+  d.ctaSub=reelTxt(c.reel_ctasub||reelCtaSubDefault(c));
+  if(st==="info_media"){
+    if(c.foto.length)d.bgList=c.foto.slice();
+    else if(userVideo(c))d.bgVideo=userVideo(c);
+  }
   if(pts.length){
     d.barsTitle="I numeri, dalle tue risposte";
-    d.bars=reelDatiToBars(pts);
-    d.barsNote="";
+    d.bars=reelDatiToBars(pts).map(b=>Object.assign(b,{name:esc(b.name),value:esc(b.value)}));
   }
-  if(hasTrend){d.trendTitle="Il trend che hai visto";d.trendPct=String(c.reel_trend.valore).trim();d.trendNote=String(c.reel_trend.nota||"").trim();}
+  if(hasTrend){d.trendTitle="Il trend che hai visto";d.trendPct=esc(String(c.reel_trend.valore).trim());d.trendNote=esc(String(c.reel_trend.nota||"").trim());}
   return d;
 }
 function igCard(){
@@ -2307,8 +2376,15 @@ async function setPronto(){
   const c=S.composer;const g=stepGuards();
   if(!slotById(c.id)){toast("Questo contenuto non è associato a nessuno slot. Torna al calendario e scegli uno slot vuoto.","warn",6000);return;}
   if(!g.hasIntervista||!g.hasFoto){toast("Mancano intervista o foto.","warn");return;}
+  // reel infografico (con o senza media) → render del template in mp4 (n8n → GitHub Action → Cloudinary → url_video)
+  if(c.tipo==="reel"&&c.reelStile!=="media"){
+    const prog=progressToast("Avvio la registrazione del Reel…");
+    try{await api("redazione-render-reel",{id:c.id,data:reelPreviewData(c)});
+      prog.done();toast("Render avviato: tra 3-5 minuti il video arriva sul contenuto (avviso su Telegram).","ok",6000);}
+    catch(e){prog.remove();toast("Render non avviato: "+e.message+". Il contenuto resta in bozza.","err",7000);return;}
+  }
   // reel da montare (foto/clip) → chiama monta-reel
-  if(c.tipo==="reel"&&!c.url_video&&c.foto.length>=3){
+  else if(c.tipo==="reel"&&!c.url_video&&c.foto.length>=3){
     const prog=progressToast("Monto il Reel con ffmpeg…");
     try{await api("redazione-monta-reel",{id:c.id,foto:c.foto,overlay:c.overlay.filter(Boolean)});
       prog.done();toast("Montaggio avviato: il video arriverà sul contenuto tra poco.","ok");}

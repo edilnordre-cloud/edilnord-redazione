@@ -7,16 +7,11 @@
   html,body{width:360px;height:640px;overflow:hidden;background:#0b120d;font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   .stage{position:absolute;inset:0}
   .bg{position:absolute;inset:0;transform:scale(1.04);animation:ken 18s linear forwards}
-  .bg img,.bg video{width:100%;height:100%;object-fit:cover}
+  .bg img,.bg video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .bg svg{position:absolute;inset:0}
+  .bg img.ph{opacity:0;transition:opacity .6s ease}.bg img.ph.on{opacity:1}
   @keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.12)}}
   .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,18,13,.5) 0%,rgba(11,18,13,.12) 30%,rgba(11,18,13,.42) 60%,rgba(11,18,13,.92) 100%)}
-  .prog{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:4px;z-index:6}
-  .seg{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.3);overflow:hidden}
-  .seg i{display:block;height:100%;width:0;background:#fff;border-radius:3px}
-  .who{position:absolute;top:26px;left:14px;display:flex;align-items:center;gap:8px;z-index:6}
-  .who .av{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 210deg,var(--sage),#e7f2ea,var(--sage-dim),var(--sage));display:grid;place-items:center;font-family:"Anton";font-size:13px;color:var(--dark)}
-  .who .nm{font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
-  .who .nm span{display:block;font-size:10px;font-weight:600;color:var(--sage-soft)}
   .cap{position:absolute;left:18px;right:18px;bottom:70px;z-index:5}
   .frame{position:absolute;left:0;right:0;bottom:0;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
   .frame.on{opacity:1;transform:none}
@@ -25,6 +20,9 @@
   .big em{font-style:normal;color:var(--sage)}
   .sub{font-size:14.5px;line-height:1.45;margin-top:12px;color:#eef5f0;font-weight:600;text-shadow:0 1px 8px rgba(0,0,0,.6)}
   .sub b{color:var(--sage)}
+  .sub:empty,.src:empty,.eyebrow:empty,.dm:empty{display:none}
+  .ovl{text-align:center;font-size:25px;line-height:1.5;font-weight:800;color:#fff}
+  .ovl span{background:rgba(0,0,0,.45);padding:4px 10px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
   .src{font-size:10.5px;color:var(--sage-soft);opacity:.85;margin-top:10px}
   .mapcard{background:rgba(11,18,13,.5);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px}
   .mapcard svg{display:block;width:100%;height:auto}
@@ -49,18 +47,18 @@
   .cta-row{display:flex;gap:8px;margin-top:12px}
   .cta-row .b{flex:1;text-align:center;font-size:13px;font-weight:800;padding:9px;border-radius:11px}
   .cta-row .save{background:#fff;color:var(--dark)}.cta-row .dmbtn{background:var(--sage);color:var(--dark)}
-  .audio{position:absolute;left:14px;right:14px;bottom:20px;z-index:6;display:flex;align-items:center;gap:8px;font-size:12px;color:#eef5f0;font-weight:600}
-  .audio .track{flex:1;overflow:hidden;white-space:nowrap;-webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
-  .audio .track span{display:inline-block;padding-left:100%;animation:mq 9s linear infinite}
-  @keyframes mq{to{transform:translateX(-100%)}}
-  .side{position:absolute;right:10px;bottom:96px;z-index:6;display:flex;flex-direction:column;gap:16px;align-items:center;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
-  .side div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
-  .side .g{font-size:22px;line-height:1}
 </style></head>
 <body>
 <div class="stage">
   <div class="bg" id="bg">
-    <svg id="mapbg" width="100%" height="100%" viewBox="0 0 360 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <svg id="plainbg" width="100%" height="100%" viewBox="0 0 360 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="pg" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#1f3528"/><stop offset="1" stop-color="#0c140f"/></linearGradient>
+        <radialGradient id="gl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#9dc0aa" stop-opacity=".30"/><stop offset="1" stop-color="#9dc0aa" stop-opacity="0"/></radialGradient>
+        <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#9dc0aa" opacity=".10"/></pattern></defs>
+      <rect width="360" height="640" fill="url(#pg)"/><rect width="360" height="640" fill="url(#dots)"/>
+      <circle cx="300" cy="120" r="210" fill="url(#gl)"/><circle cx="40" cy="470" r="170" fill="url(#gl)" opacity=".6"/>
+    </svg>
+    <svg id="mapbg" style="display:none" width="100%" height="100%" viewBox="0 0 360 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e3327"/><stop offset="1" stop-color="#0e1712"/></linearGradient></defs>
       <rect width="360" height="640" fill="url(#sky)"/>
       <g fill="#18291f"><rect x="20" y="60" width="90" height="70" rx="4"/><rect x="130" y="40" width="70" height="90" rx="4"/><rect x="220" y="70" width="110" height="60" rx="4"/><rect x="30" y="160" width="80" height="90" rx="4"/><rect x="250" y="170" width="90" height="80" rx="4"/><rect x="20" y="300" width="100" height="80" rx="4"/><rect x="240" y="320" width="100" height="70" rx="4"/><rect x="120" y="430" width="90" height="70" rx="4"/><rect x="20" y="470" width="80" height="90" rx="4"/><rect x="250" y="470" width="90" height="90" rx="4"/></g>
@@ -70,9 +68,6 @@
     </svg>
   </div>
   <div class="scrim"></div>
-  <div class="prog" id="prog"></div>
-  <div class="who"><div class="av">E</div><div class="nm" id="who">edilnordre<span>Immobiliare · Brugherio</span></div></div>
-  <div class="side"><div><span class="g">🤍</span>512</div><div><span class="g">💬</span>27</div><div><span class="g">↪</span>DM</div><div><span class="g">🔖</span>salva</div></div>
   <div class="cap" id="cap">
     <div class="frame" data-i="0"><div class="big" id="hook"></div><div class="sub" id="hookSub"></div></div>
     <div class="frame" data-i="1"><span class="eyebrow" id="mapTitle"></span>
@@ -95,17 +90,18 @@
       <div class="sub" id="trendNote"></div>
     </div>
     <div class="frame" data-i="4"><div class="cta-box"><div class="dm" id="ctaQ"></div><div class="sub" style="margin-top:8px" id="ctaSub"></div><div class="cta-row"><span class="b save">🔖 Salva</span><span class="b dmbtn">✉️ Scrivi in DM</span></div></div></div>
+    <div class="frame" data-i="5" style="bottom:120px"><div class="ovl"><span id="ovl"></span></div></div>
   </div>
-  <div class="audio"><span>♫</span><div class="track"><span id="audio"></span></div></div>
 </div>
 <script>
-  // Dati di default (esempio) — sovrascritti da window.REEL (render) o da __apply (anteprima app).
+  // Dati di default (esempio Brugherio) — usati SOLO aprendo il template da solo.
+  // Render (window.REEL) e anteprima app (__apply) partono da vuoto: mai testo dell'esempio nei reel veri.
   var DEFAULT = {
-    handle:"edilnordre", sub:"Immobiliare · Brugherio",
+    modo:"full", bgStyle:"mappa",
     hook:"A Brugherio<br>casa tua vale<br><em>1.000</em> o <em>2.810</em>€/mq?",
     hookSub:"Cambia tutto in 2 km. Dipende dalla via.",
     mapTitle:"La mappa del valore · Brugherio",
-    zones:[{name:"San Damiano",value:"2.810 €",w:"100%"},{name:"Centro",value:"2.500 €",w:"89%"},{name:"Periferia",value:"1.000 €",w:"36%"}],
+    zones:[{name:"San Damiano",value:"2.810 €"},{name:"Centro",value:"2.500 €"},{name:"Periferia",value:"1.000 €"}],
     mapSrc:"Fonte: quotazioni OMI + mercato · media città 2.725 €/mq",
     barsTitle:"Il divario, in chiaro",
     bars:[{icon:"🏡",name:"San Damiano",value:"2.810 €/mq",w:"100%",cls:"a"},{icon:"🏢",name:"Centro",value:"2.500 €/mq",w:"89%",cls:"b"},{icon:"🌳",name:"Periferia",value:"1.000 €/mq",w:"36%",cls:"c"}],
@@ -113,51 +109,63 @@
     trendTitle:"E il mercato sale", trendPct:"+7,4%",
     trendNote:"In 6 mesi. Casa tua oggi vale più di ieri — anche se non l'hai toccata.",
     ctaQ:"La tua via in che <em>fascia</em> è?",
-    ctaSub:"Scrivimi la via in DM: ti mando il valore al mq aggiornato della tua zona.",
-    audio:"audio di tendenza · original audio — edilnordre · prezzi immobili Brugherio 2026",
-    bg:null
+    ctaSub:"Scrivimi la via in DM: ti mando il valore al mq aggiornato della tua zona."
   };
-  function set(id,html){var e=document.getElementById(id);if(e&&html!=null)e.innerHTML=html;}
-  // Applica i dati: i campi assenti restano quelli già a schermo (default esempio).
+  var TEXT_IDS=["hook","hookSub","mapTitle","mapSrc","barsTitle","barsNote","trendTitle","trendPct","trendNote","ctaQ","ctaSub","ovl","z0v","z0n","z1v","z1n","z2v","z2n"];
+  var PHOTOS=[], OVERLAY=[];
+  function set(id,html){var e=document.getElementById(id);if(e)e.innerHTML=html==null?"":html;}
   function applyData(D){
     D=D||{};
-    set("hook",D.hook);set("hookSub",D.hookSub);set("mapTitle",D.mapTitle);set("mapSrc",D.mapSrc);
-    set("barsTitle",D.barsTitle);set("barsNote",D.barsNote);set("trendTitle",D.trendTitle);
-    set("trendPct",D.trendPct);set("trendNote",D.trendNote);set("ctaQ",D.ctaQ);set("ctaSub",D.ctaSub);set("audio",D.audio);
-    if(D.handle){document.getElementById("who").innerHTML=D.handle+"<span>"+(D.sub||"")+"</span>";}
-    if(D.zones){D.zones.slice(0,3).forEach(function(z,i){set("z"+i+"v",z.value);set("z"+i+"n",z.name);});}
-    if(D.bars){var bc=document.getElementById("bars");bc.innerHTML="";D.bars.forEach(function(b){
+    TEXT_IDS.forEach(function(id){set(id,D[id]);});
+    (D.zones||[]).slice(0,3).forEach(function(z,i){set("z"+i+"v",z.value);set("z"+i+"n",z.name);});
+    var bc=document.getElementById("bars");bc.innerHTML="";
+    (D.bars||[]).forEach(function(b){
       var row=document.createElement("div");row.className="barrow";
       row.innerHTML='<div class="lab">'+(b.icon||"")+" "+b.name+'</div><div class="tr"><div class="fl '+(b.cls||"a")+'" style="--w:'+b.w+'">'+b.value+'</div></div>';
       bc.appendChild(row);
-    });}
-    if(D.bg||D.bgVideo){
-      var bgEl=document.getElementById("bg");var mb=document.getElementById("mapbg");if(mb)mb.style.display="none";
-      var old=bgEl.querySelector("img,video");if(old)old.remove();
-      if(D.bgVideo){var v=document.createElement("video");v.src=D.bgVideo;v.muted=true;v.loop=true;v.autoplay=true;v.playsInline=true;v.setAttribute("playsinline","");bgEl.appendChild(v);}
-      else{var im=document.createElement("img");im.src=D.bg;bgEl.appendChild(im);}
-    }
+    });
+    OVERLAY=(D.overlay||[]).filter(Boolean);
+    // Sfondo: foto (una o più, ruotano a ogni scena) > video > disegnato (tinta brand, o mappa per l'esempio zone)
+    var bgEl=document.getElementById("bg");
+    [].slice.call(bgEl.querySelectorAll("img,video")).forEach(function(n){n.remove();});
+    PHOTOS=(D.bgList&&D.bgList.length?D.bgList:(D.bg?[D.bg]:[])).map(function(u){
+      var im=document.createElement("img");im.className="ph";im.src=u;bgEl.appendChild(im);return im;});
+    if(!PHOTOS.length&&D.bgVideo){var v=document.createElement("video");v.src=D.bgVideo;v.muted=true;v.loop=true;v.autoplay=true;v.playsInline=true;v.setAttribute("playsinline","");bgEl.appendChild(v);}
+    var drawn=!PHOTOS.length&&!D.bgVideo;
+    document.getElementById("mapbg").style.display=(drawn&&D.bgStyle==="mappa")?"":"none";
+    document.getElementById("plainbg").style.display=(drawn&&D.bgStyle!=="mappa")?"":"none";
   }
-  applyData(window.REEL || DEFAULT);
+  function showPhoto(i){PHOTOS.forEach(function(im,j){im.classList.toggle("on",j===i%PHOTOS.length);});}
 
-  // Durata per singolo frame (indice = data-i). ORDER = quali frame giocare e in che ordine.
-  // modo "dati" = tutti (hook, mappa, barre, trend, cta). modo "video" = solo hook + cta.
+  // Scene: {fi: frame da mostrare (-1 = nessuno), dur, ovl: testo overlay}.
+  // modi: video=hook+cta · dati=hook+barre+cta · dati_trend=+trend · full=tutti (esempio)
+  //       media=slideshow delle foto con righe overlay (anteprima del montaggio n8n) · mp4=solo il video
   var DURS=[2800,4000,3600,3600,4600];
-  var ORDER=[0,1,2,3,4];
+  var SCENES=[];
+  function setModo(modo){
+    var map={video:[0,4],dati:[0,2,4],dati_trend:[0,2,3,4],full:[0,1,2,3,4]};
+    if(modo==="media"){
+      var n=Math.max(PHOTOS.length,1),L=OVERLAY.length;
+      SCENES=[];for(var k=0;k<n;k++){var t=L?OVERLAY[Math.floor(k*L/n)]:"";SCENES.push({fi:t?5:-1,dur:2500,ovl:t});}
+    }else if(modo==="mp4"){SCENES=[{fi:-1,dur:8000}];}
+    else SCENES=(map[modo]||map.full).map(function(fi){return {fi:fi,dur:DURS[fi]};});
+    window.__dur=SCENES.reduce(function(a,s){return a+s.dur;},0);
+  }
   var frames=[].slice.call(document.querySelectorAll('.frame'));
-  var prog=document.getElementById('prog');
-  var segEls=[];
-  function buildProg(){prog.innerHTML="";segEls=ORDER.map(function(){var s=document.createElement('div');s.className='seg';var f=document.createElement('i');s.appendChild(f);prog.appendChild(s);return f;});}
-  // modi: video=hook+cta · dati=hook+barre+cta · dati_trend=+frame trend · full=tutti (mappa inclusa, per render/esempio)
-  function setModo(modo){var map={video:[0,4],dati:[0,2,4],dati_trend:[0,2,3,4],full:[0,1,2,3,4]};ORDER=map[modo]||map.full;window.__dur=ORDER.reduce(function(a,i){return a+DURS[i];},0);buildProg();}
-  function show(k){var fi=ORDER[k];frames.forEach(function(f){f.classList.remove('on');});frames[fi].classList.add('on');
-    segEls.forEach(function(b,j){b.style.transition='none';b.style.width=(j<k?100:0)+'%';});
-    var b=segEls[k];void b.offsetWidth;b.style.transition='width '+DURS[fi]+'ms linear';b.style.width='100%';
-    if(k+1<ORDER.length)setTimeout(function(){show(k+1);},DURS[fi]);}
-  setModo("full");
-  window.__start=function(){show(0);};
-  // Pilotaggio dall'app (anteprima in iframe): applica dati (+ modo) e cicla in loop.
-  window.__apply=function(nd){applyData(nd);if(nd&&nd.modo)setModo(nd.modo);};
-  window.__loop=function(){(function run(){show(0);setTimeout(run,window.__dur+900);})();};
+  var gen=0;
+  function show(k,g){if(g!==gen)return;var sc=SCENES[k];
+    frames.forEach(function(f){f.classList.remove('on');});
+    if(sc.ovl)set("ovl",sc.ovl);
+    if(sc.fi>=0){var f=frames[sc.fi];void f.offsetWidth;f.classList.add('on');}
+    if(PHOTOS.length)showPhoto(k);
+    if(k+1<SCENES.length)setTimeout(function(){show(k+1,g);},sc.dur);}
+  function start(){gen++;show(0,gen);}
+
+  var INIT=window.REEL||DEFAULT;
+  applyData(INIT);setModo(INIT.modo||"full");
+  window.__start=start;
+  // Pilotaggio dall'app (anteprima in iframe): sostituisce TUTTI i dati (niente residui dell'esempio) e cicla.
+  window.__apply=function(nd){nd=nd||{};applyData(nd);setModo(nd.modo||"video");};
+  window.__loop=function(){var g0;(function run(){start();g0=gen;setTimeout(function(){if(g0===gen)run();},window.__dur+900);})();};
 </script>
 </body></html>
