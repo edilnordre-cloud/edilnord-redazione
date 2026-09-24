@@ -178,6 +178,16 @@ a{color:var(--sage-ink)}
 .idea details.domande{font-size:12px;color:var(--ink-2)}
 .idea details.domande summary{cursor:pointer;color:var(--muted);user-select:none;list-style:none;padding:2px 0}
 .idea details.domande ol{margin:6px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+/* Dossier per l'intervista (fatti + fonti trovati dall'Agente Idee) */
+details.dossier{font-size:12.5px;color:var(--ink-2);background:#f6f5f1;border:1px solid #e3e1d9;border-radius:10px;padding:6px 10px}
+details.dossier summary{cursor:pointer;font-weight:700;color:var(--ink-2);user-select:none;list-style:none;padding:3px 0}
+details.dossier summary::-webkit-details-marker{display:none}
+details.dossier .ds-sec{margin-top:8px}
+details.dossier .ds-h{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px}
+details.dossier ul{margin:0 0 0 16px;display:flex;flex-direction:column;gap:3px;line-height:1.45}
+details.dossier .ds-src{color:var(--muted);font-size:11.5px}
+details.dossier a{color:#0f5d54;text-decoration:underline;word-break:break-word}
+details.dossier .ds-warn{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic}
 .idea.idea-dev{border-left:3px solid var(--sage);opacity:.92}
 .idea.idea-dev h3{font-size:15px}
 .idea.idea-dev .inp{resize:vertical;min-height:56px;font-size:13px;padding:8px 10px;width:100%}
@@ -1101,6 +1111,8 @@ function mIdeaCard(i){
     (i.angolo_locale||i.luogo)?el("div",{class:"where"},el("span",{},"📍"),el("span",{},i.angolo_locale||i.luogo)):null,
     i.brief_foto?el("div",{class:"where"},el("span",{},"📷"),el("span",{},i.brief_foto)):null);
   reelDati(i).forEach(n=>card.append(n));
+  const dos=dossierBox(i);
+  if(dos)card.append(dos);
   if(domande.length){
     const det=el("details",{});
     det.append(el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" già pronte"));
@@ -1390,6 +1402,39 @@ function reelDati(i){
     el("div",{style:"font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#0f5d54"},"🎬 Reel della settimana"),
     ...rows)];
 }
+// Dossier per l'intervista: fatti, numeri e fonti che l'Agente Idee ha trovato
+// sull'idea, per rispondere all'intervista con un'opinione fondata.
+function dossierBox(i){
+  let d=null,fonti=[];
+  try{d=i.dossier?JSON.parse(i.dossier):null;}catch(e){d=null;}
+  try{fonti=i.fonti?JSON.parse(i.fonti):[];}catch(e){fonti=[];}
+  if(!Array.isArray(fonti))fonti=[];
+  if(!d&&!fonti.length)return null;
+  d=d||{};
+  const arr=v=>Array.isArray(v)?v:[];
+  const safeUrl=u=>/^https?:\/\//i.test(String(u||""))?String(u):"";
+  const src=(x)=>{
+    const u=safeUrl(x.url),f=String(x.fonte||"").trim();
+    if(!u&&!f)return null;
+    return el("span",{class:"ds-src"}," — ",u?el("a",{href:u,target:"_blank",rel:"noopener"},f||"fonte"):f);
+  };
+  const sec=(titolo,...nodi)=>el("div",{class:"ds-sec"},el("div",{class:"ds-h"},titolo),...nodi);
+  const box=el("details",{class:"dossier"},el("summary",{},"📂 Dossier per l'intervista"));
+  if(d.contesto)box.append(sec("Contesto",el("div",{},d.contesto)));
+  const fatti=arr(d.fatti).filter(x=>x&&x.testo);
+  if(fatti.length)box.append(sec("Fatti",el("ul",{},...fatti.map(x=>el("li",{},x.testo,src(x))))));
+  const numeri=arr(d.numeri).filter(x=>x&&x.dato);
+  if(numeri.length)box.append(sec("Numeri trovati",el("ul",{},...numeri.map(x=>el("li",{},x.dato,src(x))))));
+  if(d.posizione_comune)box.append(sec("Cosa dicono gli altri",el("div",{},d.posizione_comune)));
+  const aperti=arr(d.punti_aperti).filter(Boolean);
+  if(aperti.length)box.append(sec("Da verificare",el("ul",{},...aperti.map(t=>el("li",{},t)))));
+  const spunti=arr(d.spunti_opinione).filter(Boolean);
+  if(spunti.length)box.append(sec("Dove puoi prendere posizione",el("ul",{},...spunti.map(t=>el("li",{},t)))));
+  const link=fonti.filter(f=>f&&safeUrl(f.url));
+  if(link.length)box.append(sec("Fonti consultate dall'agente",el("ul",{},...link.map(f=>el("li",{},el("a",{href:safeUrl(f.url),target:"_blank",rel:"noopener"},f.titolo||"link"))))));
+  box.append(el("div",{class:"ds-warn"},"Raccolto dall'AI: prima di citare un numero, apri la fonte."));
+  return box;
+}
 function reelBadge(i){return i.is_reel?el("span",{class:"chip",style:"background:#12201d;color:#fff"},"🎬 REEL"):null;}
 function ideaCard(i){
   const p=PILLARS[i.pilastro]||PILLARS.territorio;
@@ -1405,6 +1450,7 @@ function ideaCard(i){
     i.brief_foto?el("div",{class:"brief"},"📷 "+i.brief_foto):null,
     i.perche_funziona?el("div",{class:"why"},"💡 "+i.perche_funziona):null,
     ...reelDati(i),
+    dossierBox(i),
     domande.length?el("details",{class:"domande"},
       el("summary",{},"💬 "+domande.length+(domande.length===1?" domanda":" domande")+" per l'intervista"),
       el("ol",{},...domande.map(d=>el("li",{},d)))
