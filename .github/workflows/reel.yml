@@ -4,6 +4,7 @@ name: Reel
 # - A mano: Actions → Reel → Run workflow (data_json vuoto = esempio). L'mp4 resta come artifact scaricabile.
 # - Dall'app: n8n (workflow "Redazione – Render Reel") lancia questo workflow con data_json + content_id.
 #   A fine render l'mp4 va su Cloudinary e n8n lo aggancia al contenuto (url_video) + avviso Telegram.
+#   Il ritorno a n8n usa il job_token monouso ricevuto da n8n stesso: nessun secret da impostare su GitHub.
 on:
   workflow_dispatch:
     inputs:
@@ -13,6 +14,10 @@ on:
         default: ""
       content_id:
         description: "id del contenuto nel Calendario (lo passa n8n). Vuoto = solo artifact"
+        required: false
+        default: ""
+      job_token:
+        description: "Gettone monouso generato da n8n per restituire il video (nessun secret da configurare)"
         required: false
         default: ""
 
@@ -66,7 +71,7 @@ jobs:
         if: ${{ inputs.content_id != '' }}
         env:
           CONTENT_ID: ${{ inputs.content_id }}
-          REDAZIONE_KEY: ${{ secrets.REDAZIONE_KEY }}
+          JOB_TOKEN: ${{ inputs.job_token }}
         run: |
           set -e
           FILE=$(ls out/reel.mp4 out/reel.webm 2>/dev/null | head -1)
@@ -76,15 +81,15 @@ jobs:
           if [ -z "$URL" ]; then echo "Upload Cloudinary fallito: $RES"; OK=false; else OK=true; fi
           BODY=$(node -e "process.stdout.write(JSON.stringify({id:process.env.CONTENT_ID,url:process.argv[1],ok:process.argv[2]==='true',run:process.env.GITHUB_SERVER_URL+'/'+process.env.GITHUB_REPOSITORY+'/actions/runs/'+process.env.GITHUB_RUN_ID}))" "$URL" "$OK")
           curl -s -X POST https://n8n.edilnordre.it/webhook/redazione-reel-renderizzato \
-            -H "Content-Type: application/json" -H "X-Redazione-Key: $REDAZIONE_KEY" -d "$BODY" --max-time 60
+            -H "Content-Type: application/json" -H "X-Job-Token: $JOB_TOKEN" -d "$BODY" --max-time 60
           [ "$OK" = true ]
 
       - name: Avvisa se il render è fallito
         if: ${{ failure() && inputs.content_id != '' && steps.cb.outcome == 'skipped' }}
         env:
           CONTENT_ID: ${{ inputs.content_id }}
-          REDAZIONE_KEY: ${{ secrets.REDAZIONE_KEY }}
+          JOB_TOKEN: ${{ inputs.job_token }}
         run: |
           BODY=$(node -e "process.stdout.write(JSON.stringify({id:process.env.CONTENT_ID,url:'',ok:false,run:process.env.GITHUB_SERVER_URL+'/'+process.env.GITHUB_REPOSITORY+'/actions/runs/'+process.env.GITHUB_RUN_ID}))")
           curl -s -X POST https://n8n.edilnordre.it/webhook/redazione-reel-renderizzato \
-            -H "Content-Type: application/json" -H "X-Redazione-Key: $REDAZIONE_KEY" -d "$BODY" --max-time 60 || true
+            -H "Content-Type: application/json" -H "X-Job-Token: $JOB_TOKEN" -d "$BODY" --max-time 60 || true

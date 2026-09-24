@@ -22,9 +22,9 @@ Serve `ffmpeg` nel PATH per l'mp4; senza, resta un `.webm` (comunque riproducibi
 ## Dall'app (automatico)
 Anteprima reel → scegli **Solo infografica**, **Infografica + media** (foto che cambiano a ogni scena, o un video) o **Solo media** (slideshow n8n / MP4 pronto).
 Con i primi due, "Segna come pronto" chiama n8n (`redazione-render-reel`) → questa Action rende l'mp4 → Cloudinary →
-`redazione-reel-renderizzato` scrive `url_video` sul Calendario e avvisa su Telegram. Servono una volta:
-- in n8n, credenziale **GitHub (token reel)** (Bearer, fine-grained token con *Actions: read & write* su questo repo) sul nodo *Avvia GitHub Action*;
-- su GitHub, secret di repository **REDAZIONE_KEY** (la stessa chiave dell'app).
+`redazione-reel-renderizzato` scrive `url_video` sul Calendario e avvisa su Telegram. Il ritorno è autenticato da un
+gettone monouso che n8n genera a ogni render (`job_token`): su GitHub non serve nessun secret.
+Serve solo, in n8n, un token GitHub fine-grained con *Actions: read & write* su questo repo (nodo *Avvia GitHub Action*).
 
 ## Uso manuale (gratis)
 GitHub → scheda **Actions** → workflow **Reel** → **Run workflow**.
