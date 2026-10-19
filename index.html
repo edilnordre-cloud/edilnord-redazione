@@ -777,7 +777,10 @@ function pianoSettimanale(rows){
     const ora=Object.entries(c.ore).sort((a,b)=>b[1]-a[1])[0];
     return {dow:jsDow,pilastro,ora:ora&&/^\d{1,2}:\d{2}$/.test(ora[0])?ora[0]:(pilastro==="reel"?"13:00":"13:30")};
   }).filter(p=>p.dow>=0&&p.dow<=6);
-  return piano.length?piano:PIANO_DEFAULT;
+  // Un pilastro usato in giorni sempre diversi non raggiunge la soglia: senza
+  // questo non avrebbe mai slot. Gli do il suo giorno standard.
+  PIANO_DEFAULT.forEach(d=>{if(!piano.some(p=>p.pilastro===d.pilastro))piano.push(d);});
+  return piano;
 }
 function conSlotAutomatici(rows){
   const piano=pianoSettimanale(rows);
@@ -1511,7 +1514,23 @@ function firstFreeSlot(){
 // L'agente decide il formato: un'idea reel resta reel comunque. Preferisce lo
 // slot reel; se non c'è, prende il primo slot libero (ma il contenuto resta reel).
 function slotPerIdea(i){
-  return i.is_reel ? (findFreeSlot("reel","reel")||firstFreeSlot()) : findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro));
+  return i.is_reel ? (findFreeSlot("reel","reel")||firstFreeSlot()||slotNuovo("reel")) : (findFreeSlot(i.pilastro,tipoDaPilastro(i.pilastro))||slotNuovo(i.pilastro));
+}
+// Ultima rete: crea uno slot vuoto sul primo giorno libero del pilastro
+// (diventa una riga dello Sheet al primo salvataggio, come gli slot automatici).
+function slotNuovo(pilastro){
+  if(!PILLARS[pilastro]||pilastro==="esterno")return null;
+  const dowP=(PIANO_DEFAULT.find(p=>p.pilastro===pilastro)||{dow:3}).dow;
+  const occ=new Set(S.data.calendario.filter(s=>s.pilastro===pilastro).map(s=>s.data));
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
+  for(let n=0;n<400;n++,d.setDate(d.getDate()+1)){
+    if(d.getDay()!==dowP)continue;
+    const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(occ.has(ds))continue;
+    const s={id:"auto-"+ds+"-"+pilastro,data:ds,ora:pilastro==="reel"?"13:00":"13:30",pilastro,tipo:tipoDaPilastro(pilastro),stato:"vuoto"};
+    S.data.calendario.push(s);return s;
+  }
+  return null;
 }
 async function accettaIdea(i){
   const slot=slotPerIdea(i);
@@ -1600,16 +1619,16 @@ function ricominciaIdee(){
       let ko=0;
       for(const i of lista){
         const prev=i.stato;i.stato="scartata";i.motivo_scarto="ricomincia da zero";
-        try{await api("redazione-salva-idea",{idea:i});}catch(e){i.stato=prev;delete i.motivo_scarto;ko++;}
+        try{await api("redazione-salva-idea",{idea:i});}catch(e){i.stato=prev;delete i.motivo_scarto;ko++;S._errRic=e.message;}
       }
       for(const b of bozze){
         try{await api("redazione-salva-contenuto",{contenuto:{...b,stato:"eliminata"}});
           const idx=S.data.calendario.findIndex(x=>x.id===b.id);if(idx>=0)S.data.calendario.splice(idx,1);
           try{localStorage.removeItem('rdz_int_'+b.id);localStorage.removeItem('rdz_step_'+b.id);}catch(e){}
-        }catch(e){ko++;}
+        }catch(e){ko++;S._errRic=e.message;}
       }
       prog.done();render();
-      if(ko){toast(ko+" elementi non eliminati (errore di rete): riprova.","err",6000);return;}
+      if(ko){toast(ko+" elementi non eliminati ("+(S._errRic||"errore")+"): riprova.","err",8000);return;}
       toast("Tutto pulito: si riparte.","ok");
       openGeneraIdee();
     });
