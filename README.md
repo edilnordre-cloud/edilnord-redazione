@@ -30,7 +30,7 @@ App statica (GitHub Pages)  ──HTTPS + X-Redazione-Key──►  Webhook n8n 
 
 | Sezione | Cosa fa |
 |---|---|
-| 🗓️ **Calendario** | Vista mese + lista fino a fine settembre 2026. Slot fissi: Lun Territorio · Mer Dati · Ven Vetrina · Sab Reel + blog ogni 2 settimane. Drag&drop desktop per spostare. Martedì Immobiliare mostrato come "gestito esternamente". |
+| 🗓️ **Calendario** | Vista mese + lista sempre sui prossimi 12 mesi (slot vuoti creati in automatico dall'app, ogni anno). Slot fissi: Lun Territorio · Mer Dati · Ven Vetrina · Sab Reel + blog ogni 2 settimane. Drag&drop desktop per spostare. Martedì Immobiliare mostrato come "gestito esternamente". |
 | 💡 **Idee** | Schede dell'agente-giornalista (lun 7:00 o on-demand). ✓ Sviluppa → crea bozza nello slot giusto e apre il Composer. ✕ Scarta con annulla. |
 | ✍️ **Composer** | Percorso a 6 step: Idea → Intervista → Testo → Media → Anteprima → Programma. Intervista Mistral (la tua opinione è la tesi), anteprima IG realistica, vincolo foto+intervista per lo stato "pronto". |
 | 🗂️ **Batch** | Un tema madre + una intervista → 3-6 contenuti diversi in tabella. Upload multiplo, distribuzione automatica sugli slot, azioni di massa. Serve per riempire agosto/chiusure. |

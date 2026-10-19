@@ -751,12 +751,51 @@ function Gate(){
 async function loadAll(){
   S.loading=true;
   const res=await api("redazione-carica-dati",{});
-  S.data.calendario=(res.calendario||[]).map(normSlot);
+  S.data.calendario=conSlotAutomatici((res.calendario||[]).map(normSlot));
   S.data.idee=(res.idee||[]).map(normIdea);
   S.data.config=res.config||{};
   S.loading=false;
 }
 function normSlot(r){r.stato=r.stato||"vuoto";return r;}
+/* Slot automatici: lo Sheet aveva slot vuoti solo fino a fine settembre 2026.
+   L'app crea da sola gli slot vuoti per i prossimi 12 mesi (sempre, ogni anno)
+   seguendo il piano settimanale. Non stanno nello Sheet finche non li usi:
+   al primo salvataggio diventano una riga vera con lo stesso id. */
+const MESI_AVANTI=12;
+const PIANO_DEFAULT=[{dow:1,pilastro:"territorio",ora:"13:30"},{dow:3,pilastro:"dati",ora:"13:30"},
+  {dow:5,pilastro:"reale",ora:"13:30"},{dow:6,pilastro:"reel",ora:"13:00"}];
+// Il piano lo ricavo dagli slot gia nello Sheet (giorno + pilastro + ora piu usati),
+// cosi segue quello che hai sempre fatto; se lo Sheet e vuoto uso il piano standard.
+function pianoSettimanale(rows){
+  const cnt={};
+  rows.filter(r=>r.data&&r.tipo!=="esterno"&&PILLARS[r.pilastro]&&r.pilastro!=="esterno").forEach(r=>{
+    const k=dowOf(r.data)+"|"+r.pilastro;const c=cnt[k]=cnt[k]||{n:0,ore:{}};
+    c.n++;if(r.ora)c.ore[r.ora]=(c.ore[r.ora]||0)+1;
+  });
+  const piano=Object.entries(cnt).filter(([,c])=>c.n>=3).map(([k,c])=>{
+    const[d,pilastro]=k.split("|");const jsDow=(+d+1)%7;
+    const ora=Object.entries(c.ore).sort((a,b)=>b[1]-a[1])[0];
+    return {dow:jsDow,pilastro,ora:ora?ora[0]:(pilastro==="reel"?"13:00":"13:30")};
+  });
+  return piano.length?piano:PIANO_DEFAULT;
+}
+function conSlotAutomatici(rows){
+  const piano=pianoSettimanale(rows);
+  const ids=new Set(rows.map(r=>r.id));
+  const occupati=new Set(rows.map(r=>r.data+"|"+r.pilastro));
+  const d=new Date();d.setHours(0,0,0,0);
+  const fine=new Date(d);fine.setMonth(fine.getMonth()+MESI_AVANTI);
+  const out=rows.slice();
+  for(;d<=fine;d.setDate(d.getDate()+1)){
+    const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    piano.filter(p=>p.dow===d.getDay()).forEach(p=>{
+      const id="auto-"+ds+"-"+p.pilastro;
+      if(ids.has(id)||occupati.has(ds+"|"+p.pilastro))return;
+      out.push({id,data:ds,ora:p.ora,pilastro:p.pilastro,tipo:tipoDaPilastro(p.pilastro),stato:"vuoto"});
+    });
+  }
+  return out;
+}
 // I reel non esistono piu come formato editoriale. Le idee che arrivano
 // marcate reel (o con un pilastro che non riconosciamo, tipo "notizie")
 // diventano proposte normali: dati se il tema e numerico, altrimenti
@@ -1509,6 +1548,20 @@ function findFreeSlot(pilastro,tipo){
   const cands=visibleSlots().filter(s=>["vuoto","opzionale"].includes(s.stato)&&s.data>=today&&(s.pilastro===pilastro||(tipo==="reel"&&s.pilastro==="reel")))
     .sort((a,b)=>(a.data).localeCompare(b.data));
   return cands[0]||null;
+}
+// Preset vacanze sempre sulla prossima occorrenza (ogni anno, Pasqua calcolata).
+function presetVacanze(){
+  const t=todayStr(),y=new Date().getFullYear(),z=n=>String(n).padStart(2,"0");
+  const iso=d=>d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());
+  const pasqua=a=>{const b=a%19,c=Math.floor(a/100),e=a%100,f=Math.floor(c/4),g=c%4,h=Math.floor((c+8)/25),
+    i=Math.floor((c-h+1)/3),k=(19*b+c-f-i+15)%30,l=Math.floor(e/4),m=e%4,n=(32+2*g+2*l-k-m)%7,
+    o=Math.floor((b+11*k+22*n)/451),mese=Math.floor((k+n-7*o+114)/31),g2=((k+n-7*o+114)%31)+1;return new Date(a,mese-1,g2);};
+  const prossimo=f=>{const r=f(y);return r[1]>=t?r:f(y+1);};
+  return [
+    ["Agosto",...prossimo(a=>[a+"-08-01",a+"-08-31"])],
+    ["Natale",...prossimo(a=>[a+"-12-24",(a+1)+"-01-06"])],
+    ["Pasqua",...prossimo(a=>{const p=pasqua(a),i=new Date(p),f=new Date(p);i.setDate(p.getDate()-3);f.setDate(p.getDate()+7);return [iso(i),iso(f)];})]
+  ];
 }
 function nextDateForPillar(pilastro){
   // preferred day-of-week per pillar (JS: 0=Dom,1=Lun,...,6=Sab)
@@ -2769,7 +2822,7 @@ function SettingsView(){
   vp.append(el("div",{class:"hrow"},
     field("Dal",input(v.i,val=>S._vi=val,"","date")),
     field("Al",input(v.f,val=>S._vf=val,"","date"))));
-  vp.append(el("div",{class:"hrow",style:"gap:7px;margin-bottom:14px"},...[["Agosto","2026-08-01","2026-08-31"],["Natale","2026-12-24","2027-01-06"],["Pasqua","2027-03-26","2027-04-05"],["Ponte","",""]].map(([l,i,f])=>
+  vp.append(el("div",{class:"hrow",style:"gap:7px;margin-bottom:14px"},...[...presetVacanze(),["Ponte","",""]].map(([l,i,f])=>
     el("button",{class:"btn btn-g btn-sm",onclick:()=>{if(i){S._vi=i;S._vf=f;saveConfig({VACANZA_INIZIO:i,VACANZA_FINE:f});}}},l))));
   vp.append(el("button",{class:"btn btn-p btn-sm",onclick:()=>saveConfig({VACANZA_INIZIO:S._vi||v.i,VACANZA_FINE:S._vf||v.f})},"Salva date"));
   vp.append(el("div",{style:"margin-top:14px"},field("Cadenza ridotta (opzionale)",(()=>{const s=el("select",{class:"sel",onchange:e=>saveConfig({CADENZA_VACANZA:e.target.value})},
