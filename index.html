@@ -768,15 +768,15 @@ const PIANO_DEFAULT=[{dow:1,pilastro:"territorio",ora:"13:30"},{dow:3,pilastro:"
 // cosi segue quello che hai sempre fatto; se lo Sheet e vuoto uso il piano standard.
 function pianoSettimanale(rows){
   const cnt={};
-  rows.filter(r=>r.data&&r.tipo!=="esterno"&&PILLARS[r.pilastro]&&r.pilastro!=="esterno").forEach(r=>{
+  rows.filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.data||"")&&r.tipo!=="esterno"&&PILLARS[r.pilastro]&&r.pilastro!=="esterno").forEach(r=>{
     const k=dowOf(r.data)+"|"+r.pilastro;const c=cnt[k]=cnt[k]||{n:0,ore:{}};
     c.n++;if(r.ora)c.ore[r.ora]=(c.ore[r.ora]||0)+1;
   });
   const piano=Object.entries(cnt).filter(([,c])=>c.n>=3).map(([k,c])=>{
     const[d,pilastro]=k.split("|");const jsDow=(+d+1)%7;
     const ora=Object.entries(c.ore).sort((a,b)=>b[1]-a[1])[0];
-    return {dow:jsDow,pilastro,ora:ora?ora[0]:(pilastro==="reel"?"13:00":"13:30")};
-  });
+    return {dow:jsDow,pilastro,ora:ora&&/^\d{1,2}:\d{2}$/.test(ora[0])?ora[0]:(pilastro==="reel"?"13:00":"13:30")};
+  }).filter(p=>p.dow>=0&&p.dow<=6);
   return piano.length?piano:PIANO_DEFAULT;
 }
 function conSlotAutomatici(rows){
