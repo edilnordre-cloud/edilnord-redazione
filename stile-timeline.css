@@ -147,3 +147,5 @@ a{color:var(--green)}
 .m-next{border-radius:18px;border-color:var(--line)}
 /* Schermata d'accesso: sfondo crema invece del velo grigio */
 .backdrop:has(.gate){background:radial-gradient(ellipse at top,#FFFFFF,var(--bg) 70%);backdrop-filter:none}
+/* Anteprime di post, reel e blog: restano nel carattere dei contenuti pubblicati */
+.ig-preview,.ig-media,.ig-cap,.blog-preview,.hook-preview{font-family:'Montserrat',system-ui,sans-serif}

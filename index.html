@@ -745,6 +745,8 @@ a{color:var(--green)}
 .m-next{border-radius:18px;border-color:var(--line)}
 /* Schermata d'accesso: sfondo crema invece del velo grigio */
 .backdrop:has(.gate){background:radial-gradient(ellipse at top,#FFFFFF,var(--bg) 70%);backdrop-filter:none}
+/* Anteprime di post, reel e blog: restano nel carattere dei contenuti pubblicati */
+.ig-preview,.ig-media,.ig-cap,.blog-preview,.hook-preview{font-family:'Montserrat',system-ui,sans-serif}
 </style>
 </head>
 <body>
@@ -2411,7 +2413,7 @@ function buildCarouselSlides(c){
 function makeSlide(slide){
   const RED='#e63946',GREEN='#9DC0AA',GRAY='#f0efeb',DARK='#0a0a0a';
   const LOGO='https://edilnordre.it/wp-content/uploads/2025/02/cropped-favicon-logo-tondo-270x270.webp';
-  const W=el("div",{style:"position:absolute;inset:0;overflow:hidden"});
+  const W=el("div",{style:"position:absolute;inset:0;overflow:hidden;font-family:'Montserrat',system-ui,sans-serif"});
 
   const mkPill=()=>el("div",{style:`display:inline-block;background:${RED};padding:.35em 1em;border-radius:4em`},
     el("span",{style:"font-family:'Anton',sans-serif;font-size:2.2cqw;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.04em"},"Edilblog"));
