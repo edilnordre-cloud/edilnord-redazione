@@ -1118,6 +1118,7 @@ function MobileIdeeHome(){
     frag.append(el("button",{class:"btn btn-g",style:"width:100%;margin-top:var(--ms-4)",onclick:openGeneraIdee},
       "⚡ Genera altre idee"));
   }
+  if(ideeInSospeso().length)frag.append(el("button",{class:"btn btn-g",style:"width:100%;margin-top:var(--ms-3)",onclick:ricominciaIdee},"🧹 Ricomincia da zero"));
   const prossima=mProssimaUscita();
   if(prossima)frag.append(el("div",{class:"m-sec"},el("h2",{},"Prossima uscita")),prossima);
   return frag;
@@ -1339,6 +1340,7 @@ function IdeeView(){
   frag.append(el("div",{class:"phead"},
     el("div",{},el("h1",{},"Idee"),el("div",{class:"sub"},"L'agente-giornalista propone spunti locali dal territorio. Ogni idea rafforza una percezione: conosce il paese, sa i numeri, vende davvero.")),
     el("div",{class:"hrow"},
+      ideeInSospeso().length?el("button",{class:"btn btn-g",onclick:ricominciaIdee},"🧹 Ricomincia da zero"):null,
       el("button",{class:"btn btn-g",onclick:openGeneraIdee},"⚡ Genera idee ora"))
   ));
   const nuove=S.data.idee.filter(i=>i.stato==="nuova");
@@ -1579,6 +1581,27 @@ function nextDateForPillar(pilastro){
     d.setDate(d.getDate()+1);
   }
   return "";
+}
+// Ricomincia: scarta in blocco le idee in attesa e quelle in sviluppo, poi
+// chiede subito idee nuove all'agente. I contenuti del calendario non si toccano.
+function ideeInSospeso(){return S.data.idee.filter(i=>["nuova","accettata"].includes(i.stato));}
+function ricominciaIdee(){
+  const lista=ideeInSospeso();
+  modalCustom("Ricominciare da zero?",
+    "Scarto "+lista.length+(lista.length===1?" idea":" idee")+" in sospeso (proposte e in sviluppo), poi chiedo all'agente idee nuove. Bozze e contenuti programmati restano nel calendario.",
+    [],"Scarta e genera",async close=>{
+      close();
+      const prog=progressToast("Scarto "+lista.length+" idee…");
+      let ko=0;
+      for(const i of lista){
+        const prev=i.stato;i.stato="scartata";i.motivo_scarto="ricomincia da zero";
+        try{await api("redazione-salva-idea",{idea:i});}catch(e){i.stato=prev;delete i.motivo_scarto;ko++;}
+      }
+      prog.done();render();
+      if(ko){toast(ko+" idee non scartate (errore di rete): riprova.","err",6000);return;}
+      toast("Idee in sospeso scartate.","ok");
+      openGeneraIdee();
+    });
 }
 function openGeneraIdee(){
   let n=8,pil="";
