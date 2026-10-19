@@ -2390,23 +2390,26 @@ function buildCarouselSlides(c){
       {type:'cta',testo:c.cta_testo||'',link:c.cta_link||'Scopri su www.edilnordre.it'}
     ];
   }
-  // Preview approssimativa da intervista
-  const risp=c.intervista&&c.intervista.risposte
-    ?c.intervista.risposte.map((r,i)=>({d:(c.intervista.domande&&c.intervista.domande[i])||{},r:String(r||'').trim()})).filter(x=>x.r)
-    :[];
-  const snip=risp.map(x=>{const t=x.r.replace(/\n+/g,' ').trim();return t.length>110?t.slice(0,107)+'…':t;});
-  const p=(i,def)=>snip[i]||def;
+  // Preview dai testi veri: prima le risposte dell'intervista, poi la caption e
+  // l'articolo gia generati. Mai punti finti ("Punto chiave 1"): se il testo non
+  // basta la slide mostra meno punti.
+  const frasi=t=>String(t||"").replace(/<[^>]+>/g," ").replace(/#[\wÀ-ÿ]+/g," ").replace(/\s+/g," ")
+    .split(/(?<=[.!?])\s+/).map(x=>x.trim()).filter(x=>x.length>=12);
+  const corta=t=>t.length>110?t.slice(0,107)+"…":t;
+  const risposte=c.intervista&&c.intervista.risposte?c.intervista.risposte:[];
+  const visti=new Set();
+  const pool=[...risposte.flatMap(frasi),...frasi(c.caption_ig),...frasi(c.testo_blog)]
+    .map(corta).filter(x=>{const k=x.toLowerCase();if(visti.has(k))return false;visti.add(k);return true;});
+  let n=0;const prendi=k=>{const out=pool.slice(n,n+k);n+=out.length;return out;};
+  const sl=(def,k)=>{const intro=prendi(1)[0]||def;return {intro,punti:prendi(k)};};
+  const s2=sl('I punti chiave emergeranno dall\'analisi al momento della pubblicazione.',3);
+  const s3=sl('L\'analisi locale sarà generata dall\'AI al momento della pubblicazione.',2);
+  const s4=sl('Il consiglio pratico per i proprietari di Brugherio.',2);
   return [
     {type:'hook',foto,hook},
-    {type:'contenuto',bg:'green',circleL:'I',circleFS:4.8,title:'PUNTI<br>CHIAVE',cnt:'2/5',
-      intro:p(0,'I punti chiave emergeranno dall\'analisi al momento della pubblicazione.'),
-      punti:[p(1,'Punto chiave 1'),p(2,'Punto chiave 2'),p(3,'Punto chiave 3')]},
-    {type:'contenuto',bg:'gray',circleL:"L'",circleFS:3.4,title:'ANALISI',cnt:'3/5',
-      intro:p(4,'L\'analisi locale sarà generata dall\'AI al momento della pubblicazione.'),
-      punti:[p(5,'Dato di contesto locale'),p(6,'Ragionamento sul mercato')]},
-    {type:'contenuto',bg:'green',circleL:'IL',circleFS:3.6,title:'CONSIGLIO',cnt:'4/5',
-      intro:p(7,'Il consiglio pratico per i proprietari di Brugherio.'),
-      punti:[p(8,'Azione consigliata'),p(9,'Cosa evitare')]},
+    {type:'contenuto',bg:'green',circleL:'I',circleFS:4.8,title:'PUNTI<br>CHIAVE',cnt:'2/5',intro:s2.intro,punti:s2.punti},
+    {type:'contenuto',bg:'gray',circleL:"L'",circleFS:3.4,title:'ANALISI',cnt:'3/5',intro:s3.intro,punti:s3.punti},
+    {type:'contenuto',bg:'green',circleL:'IL',circleFS:3.6,title:'CONSIGLIO',cnt:'4/5',intro:s4.intro,punti:s4.punti},
     {type:'cta',testo:'',link:'Scopri su www.edilnordre.it'}
   ];
 }
