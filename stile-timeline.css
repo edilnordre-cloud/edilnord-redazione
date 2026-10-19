@@ -1,0 +1,149 @@
+/* ═══ Stile "Timeline" della Dashboard Edilnord — solo grafica, nessuna funzione cambia ═══ */
+:root{
+  --green:#1E3A27;
+  --sage:#9DC0AA; --sage-ink:#1E3A27; --sage-soft:#EAF1EC;
+  --bg:#FAF8F4; --surface:#ffffff; --surface-2:#F3F0EA;
+  --ink:#1A221C; --ink-2:#4A4F49; --muted:#6E726C; --line:#ECE8DF; --line-2:#E3DFD6;
+  --terra:#C8612A; --chip:#EFECE5;
+  --radius:22px; --radius-sm:14px; --radius-lg:26px;
+  --shadow-1:0 1px 0 #ECE8DF;
+  --shadow-2:0 1px 0 #ECE8DF,0 14px 34px rgba(26,34,28,.09);
+  --shadow-3:0 18px 50px rgba(26,34,28,.18);
+}
+body{font-family:'Manrope',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+/* Titoli dell'interfaccia in Manrope. Le anteprime di post e blog restano in Anton:
+   devono somigliare a quello che esce davvero su Instagram. */
+.anton,.brand .bt,.phead h1,.monthnav .mlabel,.cal-day,.crow .cdate,.idee-group-title .gname,
+.topbar .tt,.m-top .wm,.m-top h1,.m-menu .mh .t,.m-next .d,.m-cbar .lbl h2,
+div[style*="font-size:28px;font-weight:700;font-family:'Anton'"]{
+  font-family:'Manrope',-apple-system,system-ui,sans-serif!important;font-weight:800!important;text-transform:none!important;letter-spacing:-.5px}
+h1,h2,h3,h4{font-weight:800;letter-spacing:-.3px}
+a{color:var(--green)}
+:focus-visible{outline-color:var(--green)}
+
+/* Pulsanti: pillole come la Dashboard */
+.btn{border-radius:999px;font-weight:700;padding:11px 20px}
+.btn-sm{padding:7px 14px}
+.btn-p{background:var(--ink);color:#fff;box-shadow:0 10px 24px rgba(26,34,28,.18)}
+.btn-p:hover{background:var(--green);box-shadow:0 10px 24px rgba(26,34,28,.22)}
+.btn-d{background:var(--green)}
+.btn-g{background:var(--chip);border-color:transparent;color:var(--ink)}
+.btn-g:hover{background:#E6E2DA;border-color:transparent}
+.iconbtn{border-radius:999px;background:var(--chip);color:var(--ink)}
+.iconbtn:hover{background:#E6E2DA;border-color:transparent}
+.chip{border-radius:14px;padding:4px 11px;font-weight:700}
+
+/* Barra laterale PC: crema, voce attiva verde scuro */
+.side{background:var(--bg);border-right:none;padding:22px 16px}
+.brand .bt{letter-spacing:-.3px;font-size:19px}
+.brand .bs{letter-spacing:.08em}
+.nav button{border-radius:999px;padding:11px 16px;color:var(--ink-2)}
+.nav button:hover{background:var(--chip)}
+.nav button.on{background:var(--green);color:#fff;font-weight:800}
+.nav button .badge{background:var(--terra)}
+.side-foot{border-top-color:var(--line)}
+.dry-pill{border-radius:999px;padding:8px 12px}
+
+/* Contenuto PC: grande carta bianca sullo sfondo crema */
+@media(min-width:761px){
+  .main{margin:22px 22px 22px 0;background:var(--surface);border-radius:28px;box-shadow:0 1px 0 var(--line),0 18px 40px rgba(26,34,28,.06);min-height:calc(100vh - 44px)}
+}
+.phead h1{font-size:clamp(28px,3.4vw,40px);letter-spacing:-1.2px!important;line-height:1.05}
+.phead .sub{color:var(--muted)}
+
+/* Selettori a segmenti */
+.seg{background:var(--chip);border:none;border-radius:16px;padding:4px;gap:4px}
+.seg button{border-radius:12px;color:var(--ink-2);padding:8px 16px}
+.seg button.on{background:#fff;color:var(--ink);font-weight:800;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+/* Calendario mese */
+.monthnav .mlabel{font-size:22px;letter-spacing:-.6px!important}
+.cal-grid{gap:6px}
+.cal-dow{color:var(--muted);letter-spacing:.06em}
+.cal-cell{background:var(--surface);border:1px solid var(--line);border-radius:18px}
+.cal-cell.out{border-color:transparent}
+.cal-cell.today{border-color:transparent;background:rgba(234,241,236,.55);box-shadow:inset 0 0 0 1.5px var(--green)}
+.cal-cell.drop{border-color:var(--green);background:var(--sage-soft)}
+.cal-day{font-size:15px;color:var(--ink)}
+.cal-cell.today .cal-day{background:var(--ink);color:#fff}
+.cal-today-badge{color:var(--terra)}
+.slot{border-radius:12px;border-color:transparent;background:var(--surface-2)}
+.slot .sbar{top:0;bottom:0;left:0;width:5px;border-radius:12px 0 0 12px}
+.slot .stitle{font-weight:700}
+.slot.pl-esterno{background:transparent;border:1.5px dashed var(--line-2)}
+.slot.st-vuoto{background:transparent;border:1.5px dashed #D6D1C6}
+.slot.st-pronto,.slot.st-approvato,.slot.st-ok_confermato{background:var(--sage-soft);border-color:transparent}
+
+/* Lista */
+.clist{border-radius:22px;border-color:var(--line);background:var(--line)}
+.crow:hover{background:var(--bg)}
+.crow .cdate small{font-family:inherit}
+
+/* Idee */
+.idea{border:none;border-radius:22px;box-shadow:0 1px 0 var(--line),0 10px 30px rgba(26,34,28,.05)}
+.idea:hover{box-shadow:var(--shadow-2)}
+.idea .score{background:var(--chip);color:var(--ink)}
+.idea .score.mid{background:#FFF4D1;color:#6B5210}
+.idea .reader-q{border-left-color:var(--terra)}
+.idea .brief{border-radius:14px}
+.idea.idea-dev{border-left:none;box-shadow:inset 5px 0 0 var(--green),0 1px 0 var(--line)}
+.idee-group-title,.dev-section-title{border-bottom-color:var(--line)}
+.idee-group-title .gname{font-size:20px;letter-spacing:-.4px!important}
+
+/* Pannelli, campi, finestre */
+.panel{border:none;border-radius:24px;box-shadow:0 1px 0 var(--line),0 10px 30px rgba(26,34,28,.05)}
+.inp,.ta,.sel{border-radius:14px;background:var(--bg);border-color:var(--line-2)}
+.inp:focus,.ta:focus,.sel:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(30,58,39,.08)}
+.backdrop{background:rgba(26,34,28,.38)}
+.modal{border-radius:26px}
+.tbl-wrap{border-radius:22px}
+.gate-warn{border-radius:14px}
+.vac-banner{border-radius:20px}
+
+/* Avvisi: pillola scura come la Dashboard */
+.toast{border-radius:18px;background:var(--ink);font-weight:600}
+.toast.ok{background:var(--green)}.toast.err{background:#B3261E}.toast.warn{background:var(--terra)}
+
+/* ── Telefono ── */
+.m-app{background:var(--bg)}
+.m-top{background:var(--bg);color:var(--ink);box-shadow:none;border-bottom:none}
+.m-top .wm{color:var(--muted)}
+.m-top .logo{box-shadow:0 0 0 1px var(--line)}
+.m-ib{background:var(--chip)!important;color:var(--ink);border-radius:23px;border:none}
+.m-ib:active{background:#E6E2DA!important}
+.m-ib .bdg{background:var(--terra)}
+.m-top h1{font-size:34px;letter-spacing:-1.2px!important;color:var(--ink)}
+.m-top .sub{color:var(--muted)}
+.m-top .pill.live{background:var(--sage-soft);color:var(--green)}
+.m-top .pill.dry{background:#FFF4D1;color:#6B5210}
+.m-menu{background:var(--bg);color:var(--ink)}
+.m-menu nav button{border-radius:999px;color:var(--ink-2)}
+.m-menu nav button.on{background:var(--green);color:#fff}
+.m-menu nav button:active{background:var(--chip)}
+.m-menu nav button .bdg{background:var(--terra)}
+.m-menu .mf{border-top-color:var(--line)}
+.m-menu .mf .note{color:var(--muted)}
+.m-menu .mf .note b{color:var(--ink-2)}
+.m-sec h2{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.m-sec .more{color:var(--green);font-weight:700}
+.m-wip{background:var(--green);border-radius:26px;box-shadow:0 14px 30px rgba(30,58,39,.22)}
+.m-wip .t .chip{background:rgba(255,255,255,.14);color:#fff}
+.m-steps .s.done .b{background:#9DC0AA}
+.m-wip .go .btn-p{background:#fff;color:var(--green);box-shadow:none}
+.m-wip .go .btn-ghost{background:rgba(255,255,255,.14)}
+.m-mini,.m-icard{border-radius:22px;box-shadow:0 1px 0 var(--line)}
+.m-icard details summary{color:var(--green)}
+/* Barra del Composer sul telefono: crema come la testata */
+.m-cbar{background:var(--bg);color:var(--ink);border-bottom:1px solid var(--line)}
+.m-cbar .ti{color:var(--muted)}
+.m-cbar .sv{color:var(--green)}
+.m-cbar .sv.clean{color:var(--muted)}
+.m-cbar .line i{background:var(--line-2)}
+.m-cbar .line i.done{background:#9DC0AA}
+.m-cbar .line i.now{background:var(--green)}
+.m-cbar .lbl h2{font-size:24px;letter-spacing:-.6px}
+.m-cbar .lbl .n{color:var(--muted)}
+.m-stick{background:rgba(250,248,244,.94)}
+.m-next{border-radius:18px;border-color:var(--line)}
+/* Schermata d'accesso: sfondo crema invece del velo grigio */
+.backdrop:has(.gate){background:radial-gradient(ellipse at top,#FFFFFF,var(--bg) 70%);backdrop-filter:none}
