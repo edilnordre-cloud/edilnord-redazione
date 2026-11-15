@@ -879,24 +879,38 @@ function render(){
 }
 function nav(v){S.view=v;S.composer=(v==="composer")?S.composer:null;render();window.scrollTo(0,0);}
 
-/* ---------- Gate (key entry) ---------- */
+/* ---------- Gate (password entry) ----------
+   La password sblocca la chiave X-Redazione-Key, salvata qui solo cifrata
+   (AES-GCM, chiave derivata con PBKDF2-SHA256 600.000 giri). Funziona anche
+   incollando direttamente la chiave lunga. */
+const KEY_CIFRATA={s:"Jm0G4xxK1fmUGzqibsAcQw==",i:"0ZPBvhsW/t2ZQTue",c:"BS8Sp14Rx5nVoNol53+Xs1b4UXaeBJRCUI3HazukEdyiqKD4L+VJDzvdLziUg3c4E956kA=="};
+async function sbloccaChiave(pw){
+  if(/^rdz_/.test(pw))return pw;
+  const b=x=>Uint8Array.from(atob(x),ch=>ch.charCodeAt(0));
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b(KEY_CIFRATA.s),iterations:600000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  try{return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b(KEY_CIFRATA.i)},k,b(KEY_CIFRATA.c)));}
+  catch(e){throw new Error("Password sbagliata.");}
+}
 function Gate(){
   const wrap=el("div",{class:"backdrop"});
   let val="";
-  const inp=el("input",{class:"inp",type:"password",placeholder:"Incolla la chiave…",style:"margin-bottom:14px",
+  const inp=el("input",{class:"inp",type:"password",placeholder:"Password",autocomplete:"current-password",style:"margin-bottom:14px",
     oninput:e=>val=e.target.value.trim(),
     onkeydown:e=>{if(e.key==="Enter")go();}});
   const btn=el("button",{class:"btn btn-p",style:"width:100%",onclick:go},"Entra in Redazione");
   async function go(){
-    if(!val){toast("Inserisci la chiave.","warn");return;}
-    S.key=val;btn.disabled=true;btn.textContent="Verifico…";
+    if(!val){toast("Inserisci la password.","warn");return;}
+    btn.disabled=true;btn.textContent="Verifico…";
+    try{S.key=await sbloccaChiave(val);}
+    catch(e){S.key=null;btn.disabled=false;btn.textContent="Entra in Redazione";toast(e.message||"Accesso negato.","err");return;}
     try{await loadAll();S.ready=true;render();toast("Benvenuto in Redazione.","ok");}
     catch(e){S.key=null;btn.disabled=false;btn.textContent="Entra in Redazione";toast(e.message||"Accesso negato.","err");}
   }
   const m=el("div",{class:"modal gate"},
     el("div",{class:"lock"},"🔐"),
     el("h2",{class:"anton",style:"font-size:26px"},"Redazione Edilnord"),
-    el("p",{},"Centro editoriale di Edilnord RE. Inserisci la chiave di accesso: resta solo in questa sessione, non viene salvata."),
+    el("p",{},"Centro editoriale di Edilnord RE. Inserisci la password: resta solo in questa sessione, non viene salvata."),
     inp,btn
   );
   wrap.append(m);setTimeout(()=>inp.focus(),80);return wrap;
